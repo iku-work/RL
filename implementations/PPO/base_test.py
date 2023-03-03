@@ -147,10 +147,8 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.utils import set_random_seed
-from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.evaluation import evaluate_policy
 import plotly.express as px
-from stable_baselines3.common.env_checker import check_env
 import os 
 
 save_dir = 'models/PPO'
@@ -180,7 +178,7 @@ def make_env(env_id, rank, seed=0):
 
 if __name__ == "__main__":
     env_id = "heavy_pb:driving-v0" #"CartPole-v1" 
-    num_cpu = 4  # Number of processes to use
+    num_cpu = 6  # Number of processes to use
     # Create the vectorized environment
     #env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
     
@@ -189,8 +187,9 @@ if __name__ == "__main__":
     # You can choose between `DummyVecEnv` (usually faster) and `SubprocVecEnv`
     
     env = gym.make(env_id)
+    for i in range(5):
     #env = make_vec_env(env_id, n_envs=num_cpu, seed=0, vec_env_cls=SubprocVecEnv)
-    model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir)
+        model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir)
 
     #mean_reward, _ = evaluate_policy(model, env, 5, False, True, None, None, False,False)
     #print("Mean reward:", mean_reward)
@@ -199,15 +198,15 @@ if __name__ == "__main__":
     #mean_reward_tracker = MeanRewardTracker()
     
     #model = PPO('MlpPolicy', env, learning_rate=param[0], clip_range=param[1], ent_coef=param[2], n_steps=param[3], n_epochs=param[4])
-    #model.learn(total_timesteps=100000, tb_log_name='ppo')#, callback=mean_reward_tracker )#, callback=clipper)
+        model.learn(total_timesteps=10000, tb_log_name='ppo')#, callback=mean_reward_tracker )#, callback=clipper)
 
     #mean_reward, _ = evaluate_policy(model, env, 5, False, False, None, None, False,False)
     #print("Mean reward:", mean_reward)
-    #model.save(save_dir)
+        model.save(save_dir + str(i))
     
 
-    model.load('/Users/ilyakurinov/Documents/University/models/PPO')
-
+    #model.load('/Users/ilyakurinov/Documents/University/models/PPO')
+    '''
     obs = env.reset()
 
     for _ in range(1000):
@@ -217,7 +216,7 @@ if __name__ == "__main__":
         env.render()
 
         if dones:
-            env.reset()
+            env.reset()'''
 
         
     

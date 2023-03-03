@@ -10,8 +10,6 @@ import math
 import time
 
 
-
-
 class SimpleDrivingEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
@@ -23,11 +21,11 @@ class SimpleDrivingEnv(gym.Env):
             high=np.array([1, 1], dtype=np.float32))
 
         self.observation_space = gym.spaces.box.Box(
-            low=np.array([-np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf], dtype=np.float32),
-            high=np.array([np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf], dtype=np.float32))
+            low=np.array([-1, -1, -1, -1, -1, -1, -1, -1], dtype=np.float32),
+            high=np.array([1, 1, 1, 1, 1, 1, 1, 1], dtype=np.float32))
         self.np_random, _ = gym.utils.seeding.np_random()
 
-        self.client = p.connect(p.GUI)#p.DIRECT)#
+        self.client = p.connect(p.DIRECT)#p.GUI)#
         # Reduce length of episodes for RL algorithms
         p.setTimeStep(1/240, self.client)
         #p.setRealTimeSimulation(1)
@@ -157,12 +155,12 @@ class SimpleDrivingEnv(gym.Env):
         #reward = np.exp(-dist_to_goal) * int(1e6)
         reward = 0
         # Done by running off boundaries
-        if (car_ob[0] >= 10 or car_ob[0] <= -10 or
-                car_ob[1] >= 10 or car_ob[1] <= -10):
+        if (car_ob[0] >= 1 or car_ob[0] <= -1 or
+                car_ob[1] >= 1 or car_ob[1] <= -1):
             reward = -.1
             self.done = True
         # Done by reaching goal
-        if dist_to_goal < 1:
+        if dist_to_goal < 0.01:
             reward = 1
             print("Reached")
             self.done = True
@@ -191,11 +189,12 @@ class SimpleDrivingEnv(gym.Env):
              self.np_random.uniform(-5, -9))
         y = (self.np_random.uniform(5, 9) if self.np_random.randint(2) else
              self.np_random.uniform(-5, -9))
-        self.goal = (x, y)
+        self.goal = (x/10, y/10)
+        self.goal_vis = (x,y)
         self.done = False
 
         # Visual element of the goal
-        Goal(self.client, self.goal)
+        Goal(self.client, self.goal_vis)
 
 
         # Get observation to return
