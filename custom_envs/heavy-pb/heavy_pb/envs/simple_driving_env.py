@@ -110,9 +110,9 @@ class SimpleDrivingEnv(gym.Env):
                     action[1] = -1'''
 
         #Control robot with sliders in the GUI
-        left_throttle = p.readUserDebugParameter(self.left)
-        right_throttle = p.readUserDebugParameter(self.right)
-        action = np.array([left_throttle, right_throttle])
+        #left_throttle = p.readUserDebugParameter(self.left)
+        #right_throttle = p.readUserDebugParameter(self.right)
+        #action = np.array([left_throttle, right_throttle])
 
 
         #action = self.smooth_actions(action)
