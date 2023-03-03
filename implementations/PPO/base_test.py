@@ -148,7 +148,6 @@ from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.evaluation import evaluate_policy
-import plotly.express as px
 import os 
 
 save_dir = 'models/PPO'
@@ -198,7 +197,7 @@ if __name__ == "__main__":
     #mean_reward_tracker = MeanRewardTracker()
     
     #model = PPO('MlpPolicy', env, learning_rate=param[0], clip_range=param[1], ent_coef=param[2], n_steps=param[3], n_epochs=param[4])
-        model.learn(total_timesteps=10000, tb_log_name='ppo')#, callback=mean_reward_tracker )#, callback=clipper)
+        model.learn(total_timesteps=5000000, tb_log_name='ppo')#, callback=mean_reward_tracker )#, callback=clipper)
 
     #mean_reward, _ = evaluate_policy(model, env, 5, False, False, None, None, False,False)
     #print("Mean reward:", mean_reward)
