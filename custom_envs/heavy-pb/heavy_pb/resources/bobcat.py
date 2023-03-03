@@ -88,19 +88,10 @@ class Bobcat:
         pos, ang = p.getBasePositionAndOrientation(self.bobcat, self.client)
         ang = p.getEulerFromQuaternion(ang)
         ori = (math.cos(ang[2]), math.sin(ang[2]))
-        
         pos = pos[:2]
-        new_pos = []
-        for i in range(len(pos)):
-            new_pos.append(pos[i]/11)
-        pos = tuple(new_pos)
         #print(np.array(pos)/10)
         # Get the velocity of the bobcat
         vel = p.getBaseVelocity(self.bobcat, self.client)[0][0:2]
-        new_vel = []
-        for i in range(len(vel)):
-            new_vel.append(vel[i]/2)
-        vel = tuple(new_vel)
         # Concatenate position, orientation, velocity
         observation = (pos + ori + vel)
 

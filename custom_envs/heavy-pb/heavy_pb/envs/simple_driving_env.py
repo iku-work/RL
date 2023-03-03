@@ -25,7 +25,7 @@ class SimpleDrivingEnv(gym.Env):
             high=np.array([np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf], dtype=np.float32))
         self.np_random, _ = gym.utils.seeding.np_random()
 
-        self.client = p.connect(p.GUI)#p.DIRECT)#
+        self.client = p.connect(p.DIRECT)#p.GUI)#
         # Reduce length of episodes for RL algorithms
         p.setTimeStep(1/240, self.client)
         #p.setRealTimeSimulation(1)
@@ -109,10 +109,10 @@ class SimpleDrivingEnv(gym.Env):
                 if(event == 100):
                     action[1] = -1'''
 
-        # Control robot with sliders in the GUI
-        #left_throttle = p.readUserDebugParameter(self.left)
-        #right_throttle = p.readUserDebugParameter(self.right)
-        #action = np.array([left_throttle, right_throttle])
+        #Control robot with sliders in the GUI
+        left_throttle = p.readUserDebugParameter(self.left)
+        right_throttle = p.readUserDebugParameter(self.right)
+        action = np.array([left_throttle, right_throttle])
 
 
         #action = self.smooth_actions(action)
@@ -143,7 +143,6 @@ class SimpleDrivingEnv(gym.Env):
         if(self.min_dist > dist_to_goal):
             self.min_dist = dist_to_goal
 
-        
         #print(reward, np.exp(-dist_to_goal)*np.sign(self.prev_dist_to_goal - dist_to_goal), action.sum()*np.exp(-dist_to_goal))
         #reward = max(np.exp(-dist_to_goal) * np.sign(self.prev_dist_to_goal - dist_to_goal), 0)
         #reward = -dist_to_goal #- (action.sum()/10)
@@ -155,12 +154,12 @@ class SimpleDrivingEnv(gym.Env):
         #reward = np.exp(-dist_to_goal) * int(1e6)
         reward = 0
         # Done by running off boundaries
-        if (car_ob[0] >= 1 or car_ob[0] <= -1 or
-                car_ob[1] >= 1 or car_ob[1] <= -1):
+        if (car_ob[0] >= 10 or car_ob[0] <= -10 or
+                car_ob[1] >= 10 or car_ob[1] <= -10):
             reward = -.1
             self.done = True
         # Done by reaching goal
-        if dist_to_goal < 0.01:
+        if dist_to_goal < 1:
             reward = 1
             print("Reached")
             self.done = True
@@ -189,12 +188,11 @@ class SimpleDrivingEnv(gym.Env):
              self.np_random.uniform(-5, -9))
         y = (self.np_random.uniform(5, 9) if self.np_random.randint(2) else
              self.np_random.uniform(-5, -9))
-        self.goal = (x/10, y/10)
-        self.goal_vis = (x,y)
+        self.goal = (x, y)
         self.done = False
 
         # Visual element of the goal
-        Goal(self.client, self.goal_vis)
+        Goal(self.client, self.goal)
 
 
         # Get observation to return
