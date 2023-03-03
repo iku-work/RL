@@ -21,11 +21,11 @@ class SimpleDrivingEnv(gym.Env):
             high=np.array([1, 1], dtype=np.float32))
 
         self.observation_space = gym.spaces.box.Box(
-            low=np.array([-1, -1, -1, -1, -1, -1, -1, -1], dtype=np.float32),
-            high=np.array([1, 1, 1, 1, 1, 1, 1, 1], dtype=np.float32))
+            low=np.array([-np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf], dtype=np.float32),
+            high=np.array([np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf], dtype=np.float32))
         self.np_random, _ = gym.utils.seeding.np_random()
 
-        self.client = p.connect(p.DIRECT)#p.GUI)#
+        self.client = p.connect(p.GUI)#p.DIRECT)#
         # Reduce length of episodes for RL algorithms
         p.setTimeStep(1/240, self.client)
         #p.setRealTimeSimulation(1)
@@ -79,6 +79,7 @@ class SimpleDrivingEnv(gym.Env):
         # Feed action to the car and get observation of car's state
 
         #print(p.getPhysicsEngineParameters()['fixedTimeStep'])
+        
 
         self.now_time = self.time_ms()
         self.total_steps += 1
@@ -135,10 +136,9 @@ class SimpleDrivingEnv(gym.Env):
         # Compute reward as L2 change in distance to goal
         dist_to_goal = math.sqrt(((car_ob[0] - self.goal[0]) ** 2 +
                                   (car_ob[1] - self.goal[1]) ** 2))
-        reward = max((self.prev_dist_to_goal - dist_to_goal), 0) #max(self.prev_dist_to_goal - dist_to_goal, 0) #- action.sum()*0
+        #reward = max((self.prev_dist_to_goal - dist_to_goal), 0) #max(self.prev_dist_to_goal - dist_to_goal, 0) #- action.sum()*0
         #reward = max((self.min_dist - dist_to_goal), 0)
         #reward = 1 - (dist_to_goal/self.min_dist)
-        #print(1 - (dist_to_goal/self.min_dist), self.min_dist-dist_to_goal, dist_to_goal/self.min_dist)
 
         if(self.min_dist > dist_to_goal):
             self.min_dist = dist_to_goal

@@ -186,7 +186,7 @@ if __name__ == "__main__":
     # You can choose between `DummyVecEnv` (usually faster) and `SubprocVecEnv`
     
     env = gym.make(env_id)
-    for i in range(5):
+    for i in range(2):
     #env = make_vec_env(env_id, n_envs=num_cpu, seed=0, vec_env_cls=SubprocVecEnv)
         model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir)
 
@@ -197,21 +197,19 @@ if __name__ == "__main__":
     #mean_reward_tracker = MeanRewardTracker()
     
     #model = PPO('MlpPolicy', env, learning_rate=param[0], clip_range=param[1], ent_coef=param[2], n_steps=param[3], n_epochs=param[4])
-        model.learn(total_timesteps=5000000, tb_log_name='ppo')#, callback=mean_reward_tracker )#, callback=clipper)
+        model.learn(total_timesteps=10000, tb_log_name='ppo')#, callback=mean_reward_tracker )#, callback=clipper)
 
     #mean_reward, _ = evaluate_policy(model, env, 5, False, False, None, None, False,False)
     #print("Mean reward:", mean_reward)
-        model.save(save_dir + str(i))
+        model.save(save_dir+str(i))
     
 
     #model.load('/Users/ilyakurinov/Documents/University/models/PPO')
-    '''
-    obs = env.reset()
+    '''obs = env.reset()
 
     for _ in range(1000):
-        action, _states = model.predict(obs, deterministic=True)
+        action, _states = model.predict(obs)
         obs, rewards, dones, info = env.step(action)
-        print(action)
         env.render()
 
         if dones:
