@@ -199,7 +199,7 @@ if __name__ == "__main__":
     #mean_reward_tracker = MeanRewardTracker()
     
     #model = PPO('MlpPolicy', env, learning_rate=param[0], clip_range=param[1], ent_coef=param[2], n_steps=param[3], n_epochs=param[4])
-            model.learn(total_timesteps=300000, tb_log_name='ppo_ent_coef' + str(ent_coef))#, callback=mean_reward_tracker )#, callback=clipper)
+            model.learn(total_timesteps=300000, tb_log_name='ppo_ent_coef_' + str(ent_coef))#, callback=mean_reward_tracker )#, callback=clipper)
 
     #mean_reward, _ = evaluate_policy(model, env, 5, False, False, None, None, False,False)
     #print("Mean reward:", mean_reward)
