@@ -68,8 +68,8 @@ if __name__ == "__main__":
         model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir)
 
         #model = PPO('MlpPolicy', env, learning_rate=param[0], clip_range=param[1], ent_coef=param[2], n_steps=param[3], n_epochs=param[4])
-        model.learn(total_timesteps=300000, tb_log_name='ppo_ent_coef_')# + str(ent_coef))#, callback=mean_reward_tracker )#, callback=clipper)
-        model.save(save_dir + '_ent_coef_' + str(ent_coef) + '_')
+        model.learn(total_timesteps=300000, tb_log_name='ppo_fs_' + str(fs))# + str(ent_coef))#, callback=mean_reward_tracker )#, callback=clipper)
+        model.save(save_dir + '_ent_fs_' + str(fs))
     
 
     #model.load('/Users/ilyakurinov/Documents/University/models/PPO')

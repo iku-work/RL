@@ -63,6 +63,9 @@ class SimpleDrivingEnv(gym.Env):
         self.now_time = self.time_ms()
         self.last_action_time = self.time_ms()
 
+
+        self.frame_skip = 80
+
     def smooth_actions(self, action):
         # Add the current action to the buffer
         self.action_buffer[:-1] = self.action_buffer[1:]
@@ -123,7 +126,7 @@ class SimpleDrivingEnv(gym.Env):
         #while(True):
             #self.last_action_time = self.time_ms()
         #for _ in range(10):
-        for _ in range(80):
+        for _ in range(self.frame_skip):
             self.car.apply_action(action)
             p.stepSimulation()
 
@@ -268,3 +271,6 @@ class SimpleDrivingEnv(gym.Env):
 
     def time_ms(self):
         return int(time.time()) * 1000
+    
+    def set_frame_skip(self, fs):
+        self.frame_skip = fs
