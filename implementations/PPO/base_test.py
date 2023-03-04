@@ -60,13 +60,15 @@ if __name__ == "__main__":
     # which does exactly the previous steps for you.
     # You can choose between `DummyVecEnv` (usually faster) and `SubprocVecEnv`
     
-    ent_coefs = [.01, .05, .1, .5]
+    #ent_coefs = [.01, .05, .1, .5]
+    frame_skips = [20, 40, 80, 120, 160]
 
-    for ent_coef in ent_coefs:
-        model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir, ent_coef=ent_coef)
+    for fs in frame_skips:
+        env.env_method('set_frame_skip', fs)
+        model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir)
 
         #model = PPO('MlpPolicy', env, learning_rate=param[0], clip_range=param[1], ent_coef=param[2], n_steps=param[3], n_epochs=param[4])
-        model.learn(total_timesteps=500000, tb_log_name='ppo_ent_coef')# + str(ent_coef))#, callback=mean_reward_tracker )#, callback=clipper)
+        model.learn(total_timesteps=300000, tb_log_name='ppo_ent_coef_')# + str(ent_coef))#, callback=mean_reward_tracker )#, callback=clipper)
         model.save(save_dir + '_ent_coef_' + str(ent_coef) + '_')
     
 
