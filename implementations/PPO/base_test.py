@@ -185,10 +185,12 @@ if __name__ == "__main__":
     # which does exactly the previous steps for you.
     # You can choose between `DummyVecEnv` (usually faster) and `SubprocVecEnv`
     
+    ent_coefs = [.01, .05, .1, .5]
     env = gym.make(env_id)
-    for i in range(3):
+    for ent_coef in ent_coefs:
+        for i in range(3):
     #env = make_vec_env(env_id, n_envs=num_cpu, seed=0, vec_env_cls=SubprocVecEnv)
-        model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir)
+            model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir, ent_coef=ent_coef)
 
     #mean_reward, _ = evaluate_policy(model, env, 5, False, True, None, None, False,False)
     #print("Mean reward:", mean_reward)
@@ -197,11 +199,11 @@ if __name__ == "__main__":
     #mean_reward_tracker = MeanRewardTracker()
     
     #model = PPO('MlpPolicy', env, learning_rate=param[0], clip_range=param[1], ent_coef=param[2], n_steps=param[3], n_epochs=param[4])
-        model.learn(total_timesteps=10000000, tb_log_name='ppo')#, callback=mean_reward_tracker )#, callback=clipper)
+            model.learn(total_timesteps=300000, tb_log_name='ppo_ent_coef' + str(ent_coef))#, callback=mean_reward_tracker )#, callback=clipper)
 
     #mean_reward, _ = evaluate_policy(model, env, 5, False, False, None, None, False,False)
     #print("Mean reward:", mean_reward)
-        model.save(save_dir+str(i))
+            model.save(save_dir + '_ent_coef_' + str(ent_coef) + '_' + str(i))
     
 
     #model.load('/Users/ilyakurinov/Documents/University/models/PPO')
