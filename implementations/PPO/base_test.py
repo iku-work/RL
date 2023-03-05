@@ -51,7 +51,7 @@ if __name__ == "__main__":
     eval_callback = EvalCallback(env,
                              best_model_save_path='../../models',
                              log_path=log_dir,
-                             eval_freq=120,
+                             eval_freq=12000,
                              n_eval_episodes=10,
                              deterministic=True,
                              render=False,
