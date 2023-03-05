@@ -95,7 +95,6 @@ class Bobcat:
         # Concatenate position, orientation, velocity
         observation = (pos + ori + vel)
 
-
         return observation
 
 

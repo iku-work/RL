@@ -2,7 +2,7 @@ import gym
 import numpy as np
 
 from stable_baselines3 import PPO
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecNormalize
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.evaluation import evaluate_policy
@@ -45,31 +45,29 @@ if __name__ == "__main__":
     num_cpu = 3  # Number of processes to use
     # Create the vectorized environment
     env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
+    env = VecNormalize(env, norm_obs=True, norm_reward=False)
 
-    '''eval_env = DummyVecEnv([make_env(env_id, i) for i in range(num_cpu)])
-    eval_callback = EvalCallback(eval_env,
-                             best_model_save_path='best_model',
+    #eval_env = DummyVecEnv([make_env(env_id, i) for i in range(num_cpu)])
+    eval_callback = EvalCallback(env,
+                             best_model_save_path='../../models',
                              log_path=log_dir,
                              eval_freq=2048,
-                             n_eval_episodes=3,
+                             n_eval_episodes=10,
                              deterministic=True,
                              render=False,
-                             callback_on_new_best=None)'''
+                             callback_on_new_best=None)
     
-    # Stable Baselines provides you with make_vec_env() helper
-    # which does exactly the previous steps for you.
-    # You can choose between `DummyVecEnv` (usually faster) and `SubprocVecEnv`
     
     #ent_coefs = [.01, .05, .1, .5]
-    frame_skips = [20, 40, 80, 120, 160]
+    #frame_skips = [20, 40, 80, 120, 160]
 
-    for fs in frame_skips:
-        env.env_method('set_frame_skip', fs)
-        model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir)
+    #for fs in frame_skips:
+    #env.env_method('set_frame_skip', fs)
+    model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir)
 
         #model = PPO('MlpPolicy', env, learning_rate=param[0], clip_range=param[1], ent_coef=param[2], n_steps=param[3], n_epochs=param[4])
-        model.learn(total_timesteps=500000, tb_log_name='ppo_fs_' + str(fs))# + str(ent_coef))#, callback=mean_reward_tracker )#, callback=clipper)
-        model.save(save_dir + '_ent_fs_' + str(fs))
+    model.learn(total_timesteps=500000, tb_log_name='ppo_obs_norm', callback=eval_callback) # + str(fs))# + str(ent_coef))#, callback=mean_reward_tracker )#, callback=clipper)
+    model.save(save_dir + '_obs_norm') # + str(fs))
     
 
     #model.load('/Users/ilyakurinov/Documents/University/models/PPO')
@@ -78,9 +76,9 @@ if __name__ == "__main__":
     for _ in range(1000):
         action, _states = model.predict(obs)
         obs, rewards, dones, info = env.step(action)
-        env.render()
+        #env.render()
 
-        if dones:
+        if dones.any():
             env.reset()'''
 
         

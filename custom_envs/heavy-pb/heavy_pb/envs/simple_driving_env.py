@@ -30,8 +30,8 @@ class SimpleDrivingEnv(gym.Env):
         p.setTimeStep(1/240, self.client)
         #p.setRealTimeSimulation(1)
 
-        self.left = p.addUserDebugParameter('Left', 0, 1, 0.5)
-        self.right = p.addUserDebugParameter('Left', 0, 1, 0.5)
+        self.left = p.addUserDebugParameter('Left', 0, 1, 1)
+        self.right = p.addUserDebugParameter('Left', 0, 1, 1)
 
         self.car = None
         self.goal = None
@@ -79,10 +79,6 @@ class SimpleDrivingEnv(gym.Env):
         #self.reset()
 
     def step(self, action):
-        # Feed action to the car and get observation of car's state
-
-        #print(p.getPhysicsEngineParameters()['fixedTimeStep'])
-        
 
         self.now_time = self.time_ms()
         self.total_steps += 1
@@ -92,25 +88,6 @@ class SimpleDrivingEnv(gym.Env):
         # Low-pass filtering 
         smoothed_action = self.alpha * action + (1 - self.alpha) * self.prev_action
         self.last_action = smoothed_action
-
-        #clipped_action = np.clip(action, -1, 1)
-
-        #action[0] = round(action[0])
-        #action[1] = round(action[1])
-        events = p.getKeyboardEvents()
-            #print(len(events))
-
-        '''if(len(events) != 0):
-            for event in events:
-                if(event == 113):
-                    action[0] = 1
-                if(event == 97):
-                    action[0] = -1
-
-                if(event == 101):
-                    action[1] = 1
-                if(event == 100):
-                    action[1] = -1'''
 
         #Control robot with sliders in the GUI
         #left_throttle = p.readUserDebugParameter(self.left)
@@ -166,6 +143,7 @@ class SimpleDrivingEnv(gym.Env):
             reward = 1
             print("Reached")
             self.done = True
+
 
         ob = np.array(car_ob + self.goal, dtype=np.float32)
 
