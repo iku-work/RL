@@ -45,7 +45,7 @@ if __name__ == "__main__":
     num_cpu = 3  # Number of processes to use
     # Create the vectorized environment
     env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
-    env = VecNormalize(env, norm_obs=True, norm_reward=False)
+    #env = VecNormalize(env, norm_obs=True, norm_reward=False)
 
     #eval_env = DummyVecEnv([make_env(env_id, i) for i in range(num_cpu)])
     eval_callback = EvalCallback(env,
@@ -66,8 +66,8 @@ if __name__ == "__main__":
     model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir)
 
         #model = PPO('MlpPolicy', env, learning_rate=param[0], clip_range=param[1], ent_coef=param[2], n_steps=param[3], n_epochs=param[4])
-    model.learn(total_timesteps=500000, tb_log_name='ppo_obs_norm', callback=eval_callback) # + str(fs))# + str(ent_coef))#, callback=mean_reward_tracker )#, callback=clipper)
-    model.save(save_dir + '_obs_norm') # + str(fs))
+    model.learn(total_timesteps=500000, tb_log_name='ppo_control', callback=eval_callback) # + str(fs))# + str(ent_coef))#, callback=mean_reward_tracker )#, callback=clipper)
+    model.save(save_dir + 'control') # + str(fs))
     
 
     #model.load('/Users/ilyakurinov/Documents/University/models/PPO')
