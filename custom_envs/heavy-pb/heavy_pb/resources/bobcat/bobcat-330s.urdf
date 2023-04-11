@@ -1,0 +1,207 @@
+<?xml version="1.0" ?>
+<robot name="bobcat-330s">
+
+
+
+<link name="base_link">
+  <inertial>
+    <origin rpy="0 0 0" xyz="-0.29170401469522367 0.004971637347210251 0.7284934442045696"/>
+    <mass value="2365"/>
+    <inertia ixx="5628.0162182817285" ixy="2.4416892505657586" ixz="745.4541965134918" iyy="9309.898666110948" iyz="0.06741359436135497" izz="10573.428316139072"/>
+  </inertial>
+  <visual>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/base_link.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+
+  </visual>
+  <collision>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/base_link.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="base_link1exel_641">
+    <contact>
+      <lateral_friction value=".8"/>
+      <rolling_friction value="0.0"/>
+      <stiffness value="300000"/>
+      <damping value="10000"/>
+    </contact>
+
+  <inertial>
+    <origin rpy="0 0 0" xyz="-8.044513555116595e-05 0.15796911018747128 2.572880642870423e-06"/>
+    <mass value="50"/>
+    <inertia ixx="57.587582324585696" ixy="-0.01953915141757534" ixz="-0.0003163463438227154" iyy="96.06267594298868" iyz="-0.00027627143111885744" izz="57.58765084877268"/>
+  </inertial>
+  <visual>
+    <origin rpy="0 0 0" xyz="0.661731 0.880337 -0.415921"/>
+    <geometry>
+      <mesh filename="meshes/base_link1exel_641.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+
+  </visual>
+  <collision>
+    <origin rpy="0 0 0" xyz="0.661731 0.880337 -0.415921"/>
+    <geometry>
+      <mesh filename="meshes/base_link1exel_641.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="base_link1exel_631">
+    <contact>
+      <lateral_friction value=".8"/>
+      <rolling_friction value="0.6"/>
+      <stiffness value="300000"/>
+      <damping value="10000"/>
+    </contact>
+
+  <inertial>
+    <origin rpy="0 0 0" xyz="-8.018334581239017e-05 0.1579689917452647 2.5728806462566034e-06"/>
+    <mass value="50"/>
+    <inertia ixx="57.58758248482047" ixy="-0.019696513965300255" ixz="-0.00022570406440536317" iyy="96.06269607747356" iyz="-0.0002762252806860488" izz="57.58767114349075"/>
+  </inertial>
+  <visual>
+    <origin rpy="0 0 0" xyz="-0.569502 0.87971 -0.415921"/>
+    <geometry>
+      <mesh filename="meshes/base_link1exel_631.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+
+  </visual>
+  <collision>
+    <origin rpy="0 0 0" xyz="-0.569502 0.87971 -0.415921"/>
+    <geometry>
+      <mesh filename="meshes/base_link1exel_631.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="base_link1exel_611">
+    <contact>
+      <lateral_friction value=".8"/>
+      <rolling_friction value="0.0"/>
+      <stiffness value="300000"/>
+      <damping value="10000"/>
+    </contact>
+
+  <inertial>
+    <origin rpy="0 0 0" xyz="8.13974223724534e-05 -0.1579695524833601 -2.8473205121448686e-06"/>
+    <mass value="50"/>
+    <inertia ixx="57.58741378809077" ixy="-0.019474817953778256" ixz="0.000292632642810986" iyy="96.06239399450237" iyz="-0.00016449597416112738" izz="57.58750069141661"/>
+  </inertial>
+  <visual>
+    <origin rpy="0 0 0" xyz="-0.5686 -0.89029 -0.415921"/>
+    <geometry>
+      <mesh filename="meshes/base_link1exel_611.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+
+  </visual>
+  <collision>
+    <origin rpy="0 0 0" xyz="-0.5686 -0.89029 -0.415921"/>
+    <geometry>
+      <mesh filename="meshes/base_link1exel_611.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="base_link1exel_621">
+    <contact>
+      <lateral_friction value=".8"/>
+      <rolling_friction value="0.0"/>
+      <stiffness value="300000"/>
+      <damping value="10000"/>
+    </contact>
+
+  <inertial>
+    <origin rpy="0 0 0" xyz="8.11356322826251e-05 -0.15796943404115726 -2.8473205160861603e-06"/>
+    <mass value="50"/>
+    <inertia ixx="57.58741395163236" ixy="-0.019635417430095004" ixz="0.00020199154442934741" iyy="96.06237353620259" iyz="-0.00016454212413918867" izz="57.587480396657384"/>
+  </inertial>
+  <visual>
+    <origin rpy="0 0 0" xyz="0.662633 -0.889663 -0.415921"/>
+    <geometry>
+      <mesh filename="meshes/base_link1exel_621.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+
+  </visual>
+  <collision>
+    <origin rpy="0 0 0" xyz="0.662633 -0.889663 -0.415921"/>
+    <geometry>
+      <mesh filename="meshes/base_link1exel_621.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<joint name="base_link1_Rev1" type="continuous">
+  <origin rpy="0 0 0" xyz="-0.661731 -0.880337 0.415921"/>
+  <parent link="base_link"/>
+  <child link="base_link1exel_641"/>
+  <axis xyz="-0.000509 1.0 0.0"/>
+</joint>
+<transmission name="base_link1_Rev1_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="base_link1_Rev1">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="base_link1_Rev1_actr">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<joint name="base_link1_Rev2" type="continuous">
+  <origin rpy="0 0 0" xyz="0.569502 -0.87971 0.415921"/>
+  <parent link="base_link"/>
+  <child link="base_link1exel_631"/>
+  <axis xyz="-0.000509 1.0 0.0"/>
+</joint>
+<transmission name="base_link1_Rev2_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="base_link1_Rev2">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="base_link1_Rev2_actr">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<joint name="base_link1_Rev3" type="continuous">
+  <origin rpy="0 0 0" xyz="0.5686 0.89029 0.415921"/>
+  <parent link="base_link"/>
+  <child link="base_link1exel_611"/>
+  <axis xyz="-0.000509 1.0 0.0"/>
+</joint>
+<transmission name="base_link1_Rev3_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="base_link1_Rev3">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="base_link1_Rev3_actr">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+    <mechanicalReduction>10</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<joint name="base_link1_Rev4" type="continuous">
+  <origin rpy="0 0 0" xyz="-0.662633 0.889663 0.415921"/>
+  <parent link="base_link"/>
+  <child link="base_link1exel_621"/>
+  <axis xyz="-0.000509 1.0 0.0"/>
+</joint>
+<transmission name="base_link1_Rev4_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="base_link1_Rev4">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="base_link1_Rev4_actr">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+    <mechanicalReduction>10</mechanicalReduction>
+  </actuator>
+</transmission>
+
+</robot>

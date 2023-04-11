@@ -2,7 +2,7 @@ import gym
 import numpy as np
 import math
 import pybullet as p
-from heavy_pb.resources.wheel import Bobcat
+from heavy_pb.resources.wheelloader.wheel import Bobcat
 from heavy_pb.resources.plane import Plane
 from heavy_pb.resources.goal import Goal
 import matplotlib.pyplot as plt

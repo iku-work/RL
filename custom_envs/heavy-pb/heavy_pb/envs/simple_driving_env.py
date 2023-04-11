@@ -1,8 +1,8 @@
-import gym
+import gym as gym
 import numpy as np
 import math
 import pybullet as p
-from heavy_pb.resources.bobcat import Bobcat
+from heavy_pb.resources.bobcat.bobcat import Bobcat
 from heavy_pb.resources.plane import Plane
 from heavy_pb.resources.goal import Goal
 import matplotlib.pyplot as plt
@@ -213,8 +213,7 @@ class SimpleDrivingEnv(gym.Env):
         plt.pause(.00001)'''
 
         
-        agent_pos, agent_orn =\
-        p.getBasePositionAndOrientation(self.car.get_ids()[0])
+        agent_pos, agent_orn = p.getBasePositionAndOrientation(self.car.get_ids()[0])
 
         yaw = p.getEulerFromQuaternion(agent_orn)[-1]
         xA, yA, zA = agent_pos

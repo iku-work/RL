@@ -1,4 +1,4 @@
-import gym
+import gym 
 import numpy as np
 
 from stable_baselines3 import PPO
@@ -16,7 +16,7 @@ save_dir = 'models/PPO'
 log_dir = 'logs'
 
 #if not os.path.exists(save_dir):
-#    os.makedirs(save_dir)
+#    os.makedirs(save_dir)  
 
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
@@ -41,11 +41,11 @@ def make_env(env_id, rank, seed=0):
 
 
 if __name__ == "__main__":
-    env_id = "heavy_pb:driving-v0" #"CartPole-v1" 
+    env_id = "heavy_pb:forwarder-v0" #"CartPole-v1" 
     num_cpu = 3  # Number of processes to use
     # Create the vectorized environment
     env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
-    #env = VecNormalize(env, norm_obs=True, norm_reward=False)
+    env = VecNormalize(env, norm_obs=True, norm_reward=False)
 
     #eval_env = DummyVecEnv([make_env(env_id, i) for i in range(num_cpu)])
     eval_callback = EvalCallback(env,

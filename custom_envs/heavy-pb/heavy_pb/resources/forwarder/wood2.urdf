@@ -1,0 +1,43 @@
+<?xml version="1.0" ?>
+<robot name="wood">
+
+<material name="silver">
+  <color rgba="0.700 0.700 0.700 1.000"/>
+</material>
+
+<link name="base_link">
+  <inertial>
+    <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+    <mass value="175.41412851811845"/>
+    <inertia ixx="0.0" iyy="1.0" izz="1.0" ixy="0.0" iyz="0.0" ixz="0.0"/>
+    <dynamics friction=".8" damping=".5"/>
+  </inertial>
+  
+  <visual>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <geometry>
+      <cylinder length="4" radius=".25"/>
+    </geometry>
+    <material name="silver"/>
+    <material/>
+  </visual>
+  
+  <collision concave="yes">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <geometry>
+      <cylinder length="4" radius=".25"/>
+    </geometry>
+  </collision>
+
+  <contact>
+    <lateral_friction value=".3"/>
+    <rolling_friction value=".1"/>
+    <!--contact_cfm value="11"/-->
+    <!--contact_erp value="1"/-->
+    <!--stiffness value="3000000"/-->
+    <!--damping value="100000"/-->
+  </contact>
+
+</link>
+
+</robot>

@@ -1,0 +1,348 @@
+<?xml version="1.0" ?>
+<robot name="Forwarder">
+
+<material name="yellow">
+  <color rgba="0.255 0.194 0.102 1.000"/>
+</material>
+
+<link name="base_link">
+  <inertial>
+    <origin xyz="-0.003908201139738416 0.9506037201761217 0.7021762721407181" rpy="0 0 0"/>
+    <mass value="25822.657136799415"/>
+    <inertia ixx="68520.30015819168" iyy="14442.08580938712" izz="76765.0744439933" ixy="16.406908694211793" iyz="2841.662999748536" ixz="-4.0217320324372565"/>
+  </inertial>
+  <visual>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/base_link.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+    <material/>
+  </visual>
+  <collision>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/base_link_collision_vhacd.obj" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="cranePillar1">
+  <inertial>
+    <origin xyz="3.497467832070701e-07 -0.0698455421799471 0.40873602648964047" rpy="0 0 0"/>
+    <mass value="460.1534968092927"/>
+    <inertia ixx="59.03278028466866" iyy="56.713124294482895" izz="7.345476497081563" ixy="-1.4077627952246985e-13" iyz="8.862009230487274" ixz="8.895106873296754e-13"/>
+  </inertial>
+  <visual>
+    <origin xyz="0.002853 1.980877 -1.765904" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/cranePillar1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="yellow"/>
+    <material/>
+  </visual>
+  <collision>
+    <origin xyz="0.002853 1.980877 -1.765904" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/cranePillar1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="grappleHook1">
+  <inertial>
+    <origin xyz="3.4974674460730437e-07 -0.04004389093610916 -0.11887971692825339" rpy="0 0 0"/>
+    <mass value="33.99158446471375"/>
+    <inertia ixx="0.20725039514286436" iyy="0.22511396492757285" izz="0.13021222476604066" ixy="-1.554312234475219e-14" iyz="-3.464613149617435e-05" ixz="1.0658141036401503e-14"/>
+  </inertial>
+  <visual>
+    <origin xyz="0.042853 -2.404621 -4.66865" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/grappleHook1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+    <material/>
+  </visual>
+  <collision>
+    <origin xyz="0.042853 -2.404621 -4.66865" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/grappleHook1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="extension1">
+  <inertial>
+    <origin xyz="0.0900003497467292 0.8396951167363842 0.08216471793409852" rpy="0 0 0"/>
+    <mass value="422.2365549320586"/>
+    <inertia ixx="278.0083600311318" iyy="32.18252466798731" izz="250.13951836130343" ixy="-1.3145040611561853e-12" iyz="76.28971893436801" ixz="4.973799150320701e-13"/>
+  </inertial>
+  <visual>
+    <origin xyz="0.132853 -0.088447 -5.383919" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/extension1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+    <material/>
+  </visual>
+  <collision>
+    <origin xyz="0.132853 -0.088447 -5.383919" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/extension1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="craneArm1">
+  <inertial>
+    <origin xyz="0.11000036108414299 1.097421971310039 1.286886872630769" rpy="0 0 0"/>
+    <mass value="498.213131651919"/>
+    <inertia ixx="384.12483110332505" iyy="215.59111404062423" izz="176.78289133432247" ixy="1.924221219029576e-06" iyz="-187.50947555514426" ixz="3.474305207973316e-06"/>
+  </inertial>
+  <visual>
+    <origin xyz="0.112853 2.155476 -2.865968" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/craneArm1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+    <material/>
+  </visual>
+  <collision>
+    <origin xyz="0.112853 2.155476 -2.865968" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/craneArm1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="grappleBody1">
+  <inertial>
+    <origin xyz="-0.004618843729026323 -5.2031967637589105e-05 -0.14258908582901153" rpy="0 0 0"/>
+    <mass value="65.77548879718992"/>
+    <inertia ixx="1.449219969319529" iyy="3.390393198914353" izz="3.8958693606421093" ixy="-3.458598317962469e-06" iyz="0.00018453603831858345" ixz="-0.009473751722170576"/>
+  </inertial>
+  <visual>
+    <origin xyz="0.042853 -2.364542 -4.453665" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/grappleBody1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+    <material/>
+  </visual>
+  <collision>
+    <origin xyz="0.042853 -2.364542 -4.453665" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/grappleBody1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="intermediateHookJnt1">
+  <inertial>
+    <origin xyz="-0.05999965025325889 -4.401689109601037e-05 -0.12159176394931936" rpy="0 0 0"/>
+    <mass value="19.458555791807512"/>
+    <inertia ixx="0.18389551539814875" iyy="0.20939610086617222" izz="0.09333485423259447" ixy="-3.108624468950438e-14" iyz="-4.235586175127537e-05" ixz="-1.8207657603852567e-14"/>
+  </inertial>
+  <visual>
+    <origin xyz="-0.017147 -2.364705 -4.901125" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/intermediateHookJnt1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+    <material/>
+  </visual>
+  <collision>
+    <origin xyz="-0.017147 -2.364705 -4.901125" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/intermediateHookJnt1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="grappleL1">
+  <inertial>
+    <origin xyz="0.10267709197957409 -0.14637698444689073 -0.09865882854697983" rpy="0 0 0"/>
+    <mass value="252.06590264464234"/>
+    <inertia ixx="26.418413918627266" iyy="8.905221520147279" izz="21.967850629110444" ixy="0.10502398340304353" iyz="-0.27276407811541503" ixz="2.8947273923490684"/>
+  </inertial>
+  <visual>
+    <origin xyz="-0.237147 -2.514479 -4.27984" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/grappleL1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+    <material/>
+  </visual>
+  <collision concave="yes">
+    <origin xyz="-0.237147 -2.514479 -4.27984" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/grappleL1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="grappleR1">
+  <inertial>
+    <origin xyz="-0.10299585355977209 -0.14737154539613462 -0.10780227464296921" rpy="0 0 0"/>
+    <mass value="307.2406805414771"/>
+    <inertia ixx="34.49232494731041" iyy="12.480057091173876" izz="27.70269767525133" ixy="-0.09405649550137696" iyz="-0.25324540319525113" ixz="-3.82194570976219"/>
+  </inertial>
+  <visual>
+    <origin xyz="0.322853 -2.514479 -4.27984" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/grappleR1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+    <material/>
+  </visual>
+  <collision concave="yes">
+    <origin xyz="0.322853 -2.514479 -4.27984" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/grappleR1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<joint name="Revolute_1" type="continuous">
+  <origin xyz="-0.002853 -1.980877 1.765904" rpy="0 0 0"/>
+  <parent link="base_link"/>
+  <child link="cranePillar1"/>
+  <axis xyz="-0.0 0.000365 1.0"/>
+  <limit lower="-1.54" upper="1.54"/>
+</joint>
+<transmission name="Revolute_1_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="Revolute_1">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="Revolute_1_actr">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<joint name="Revolute_16" type="continuous">
+  <origin xyz="-0.06 0.039916 -0.232475" rpy="0 0 0"/>
+  <parent link="intermediateHookJnt1"/>
+  <child link="grappleHook1"/>
+  <axis xyz="-0.0 -1.0 0.000365"/>
+</joint>
+<transmission name="Revolute_16_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="Revolute_16">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="Revolute_16_actr">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<joint name="Revolute_24" type="continuous">
+  <origin xyz="-0.02 2.243923 2.517951" rpy="0 0 0"/>
+  <parent link="craneArm1"/>
+  <child link="extension1"/>
+  <axis xyz="1.0 -0.0 0.0"/>
+</joint>
+<transmission name="Revolute_24_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="Revolute_24">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="Revolute_24_actr">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<joint name="Revolute_25" type="continuous">
+  <origin xyz="-0.11 -0.174599 1.100064" rpy="0 0 0"/>
+  <parent link="cranePillar1"/>
+  <child link="craneArm1"/>
+  <axis xyz="1.0 -0.0 0.0"/>
+  <limit lower="-1.54" upper="0.60"/>
+</joint>
+<transmission name="Revolute_25_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="Revolute_25">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="Revolute_25_actr">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<joint name="Revolute_26" type="continuous">
+  <origin xyz="0.0 -0.040079 -0.214985" rpy="0 0 0"/>
+  <parent link="grappleHook1"/>
+  <child link="grappleBody1"/>
+  <axis xyz="0.0 -0.000365 -1.0"/>
+  <limit lower="-3.14" upper="3.14"/>
+</joint>
+<transmission name="Revolute_26_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="Revolute_26">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="Revolute_26_actr">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<joint name="Revolute_27" type="continuous">
+  <origin xyz="0.15 2.276258 -0.482794" rpy="0 0 0"/>
+  <parent link="extension1"/>
+  <child link="intermediateHookJnt1"/>
+  <axis xyz="1.0 -0.0 0.0"/>
+</joint>
+<transmission name="Revolute_27_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="Revolute_27">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="Revolute_27_actr">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<joint name="Revolute_30" type="continuous">
+  <origin xyz="0.28 0.149937 -0.173825" rpy="0 0 0"/>
+  <parent link="grappleBody1"/>
+  <child link="grappleL1"/>
+  <axis xyz="-0.0 -1.0 0.000365"/>
+</joint>
+<transmission name="Revolute_30_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="Revolute_30">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="Revolute_30_actr">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<joint name="Revolute_31" type="continuous">
+  <origin xyz="-0.28 0.149937 -0.173825" rpy="0 0 0"/>
+  <parent link="grappleBody1"/>
+  <child link="grappleR1"/>
+  <axis xyz="-0.0 -1.0 0.000365"/>
+  <limit lower="-1.54" upper=".6"/>
+</joint>
+<!--transmission name="Revolute_31_tran"-->
+  <!--type>transmission_interface/SimpleTransmission</type-->
+  <!--joint name="Revolute_31"-->
+    <!--hardwareInterface>PositionJointInterface</hardwareInterface-->
+  <!--/joint-->
+  <!--actuator name="Revolute_31_actr"-->
+    <!--hardwareInterface>PositionJointInterface</hardwareInterface-->
+    <!--mechanicalReduction>1</mechanicalReduction-->
+  <!--/actuator-->
+<!--/transmission-->
+
+
+
+</robot>
