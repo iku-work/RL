@@ -20,7 +20,7 @@ class ForwarderPick(gym.Env):
         self.action_space = gym.spaces.Box(
             low=np.full((5,), -1, dtype = np.float32),
             high=np.full((5,), 1, dtype = np.float32),
-            dtype = np.float32
+            dtype = np.int32
         )
         #print(self.action_space.sample())
 
@@ -41,10 +41,10 @@ class ForwarderPick(gym.Env):
         self.plane = p.loadURDF("plane.urdf")
         self.forwarder = Forwarder(self.client)
         self.forwarderId = self.forwarder.forwarder
-        #self.woodPile = WoodPile([3.5,1,0.5], [1.54 ,0, 1.54], 5, 3, .5)
+        self.woodPile = WoodPile([3.5,1,0.5], [1.54 ,0, 1.54], 5, 3, .5)
 
         self.update_freq = 240
-        self.frameskip = 120
+        self.frameskip = 10
 
         self.rendered_img = None
         self.img = None
@@ -77,8 +77,10 @@ class ForwarderPick(gym.Env):
         self.forwarder.apply_action(action)
         avg_delta = 1
 
-        '''
-        # Frameskip with timeout?
+        for _ in  range(self.frameskip):
+            p.stepSimulation()
+        
+        '''# Frameskip with timeout?
 
         i = 0
         timeout = 250
@@ -110,19 +112,17 @@ class ForwarderPick(gym.Env):
             if (i>timeout):
                 break 
 
-            self.check_grasp()
-        '''
+            self.check_grasp()'''
+        
         reward = self.getNumLogs()
 
         if (self.check_grasp()):
             reward += 0.1
 
         if (self.check_collision_results()):
-            done = True
+            #done = True
             reward = -1
 
-        #for _ in  range(self.frameskip):
-        p.stepSimulation()
 
         self.img = self.forwarder.camera.getCameraImage()
         #obs = self.forwarder.get_observation()
@@ -165,6 +165,9 @@ class ForwarderPick(gym.Env):
         self.rendered_img.set_data(self.img[2])
         plt.draw()
         plt.pause(.00001)
+        
+        if (mode == 'rgb_array'):
+            return self.img[2]
 
 
     def get_depth_img(self):

@@ -157,7 +157,7 @@ class Forwarder:
         max_force = [ None, None, None, None, 5e4 ]
         active_joints = [0,1,2,5,7]
         # subject to calibration
-        self.action_scale = [.05, .025, .025, .5, .5] 
+        self.action_scale = [.08, .05, .025, .05, .5] 
         
 
         joints = p.getJointStates(
@@ -184,13 +184,13 @@ class Forwarder:
         '''
         p.setJointMotorControl2(self.forwarder, 0,
                             p.POSITION_CONTROL,
-                            targetPosition= joints[0][0] + action[0],#action[0],
+                            targetPosition= action[0],#action[0],
                             maxVelocity=.15
                             )
 
         p.setJointMotorControl2(self.forwarder, 1,
                             p.POSITION_CONTROL,
-                            targetPosition= joints[0][0] + action[1],#action[1],
+                            targetPosition= action[1],#action[1],
                             maxVelocity=.15,
                             force=2e5
                             )   

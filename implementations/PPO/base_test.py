@@ -2,15 +2,22 @@ import gym
 import numpy as np
 
 from stable_baselines3 import PPO
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecNormalize
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecNormalize, VecVideoRecorder
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.evaluation import evaluate_policy
 import os 
 
-from stable_baselines3.common.callbacks import EvalCallback
+from stable_baselines3.common.callbacks import EvalCallback, CallbackList, BaseCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.logger import TensorBoardOutputFormat
+
+
+import imageio 
+        
+        
+
+
 
 save_dir = 'models/PPO'
 log_dir = 'logs'
@@ -47,8 +54,10 @@ if __name__ == "__main__":
     env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
     env = VecNormalize(env, norm_obs=True, norm_reward=False)
 
+
+
     #eval_env = DummyVecEnv([make_env(env_id, i) for i in range(num_cpu)])
-    eval_callback = EvalCallback(env,
+    eval_callback = EvalCallback(env ,
                              best_model_save_path='../../models',
                              log_path=log_dir,
                              eval_freq=12000,
@@ -56,7 +65,7 @@ if __name__ == "__main__":
                              deterministic=True,
                              render=False,
                              callback_on_new_best=None)
-    
+
     
     #ent_coefs = [.01, .05, .1, .5]
     #frame_skips = [20, 40, 80, 120, 160]
@@ -69,17 +78,16 @@ if __name__ == "__main__":
     model.learn(total_timesteps=500000, tb_log_name='ppo_control', callback=eval_callback) # + str(fs))# + str(ent_coef))#, callback=mean_reward_tracker )#, callback=clipper)
     model.save(save_dir + 'control') # + str(fs))
     
+    env = gym.make(env_id)
 
-    #model.load('/Users/ilyakurinov/Documents/University/models/PPO')
-    '''obs = env.reset()
+    video_folder = "logs/videos/"
+    images = []
+    obs = model.env.reset()
+    img = model.env.render(mode="rgb_array")
+    for i in range(2000):
+        images.append(img)
+        action, _ = model.predict(obs)
+        obs, _, _ ,_ = model.env.step(action)
+        img = model.env.render(mode="rgb_array")
 
-    for _ in range(1000):
-        action, _states = model.predict(obs)
-        obs, rewards, dones, info = env.step(action)
-        #env.render()
-
-        if dones.any():
-            env.reset()'''
-
-        
-    
+    imageio.mimsave(video_folder + "/result.gif", [np.array(img) for i, img in enumerate(images) if i%2 == 0], fps=29)
