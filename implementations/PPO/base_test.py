@@ -75,19 +75,19 @@ if __name__ == "__main__":
     model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir)
 
         #model = PPO('MlpPolicy', env, learning_rate=param[0], clip_range=param[1], ent_coef=param[2], n_steps=param[3], n_epochs=param[4])
-    model.learn(total_timesteps=500000, tb_log_name='ppo_control', callback=eval_callback) # + str(fs))# + str(ent_coef))#, callback=mean_reward_tracker )#, callback=clipper)
+    model.learn(total_timesteps=5000, tb_log_name='ppo_control', callback=eval_callback) # + str(fs))# + str(ent_coef))#, callback=mean_reward_tracker )#, callback=clipper)
     model.save(save_dir + 'control') # + str(fs))
     
     env = gym.make(env_id)
 
     video_folder = "logs/videos/"
     images = []
-    obs = model.env.reset()
-    img = model.env.render(mode="rgb_array")
+    obs = env.reset()
+    img = env.render(mode="rgb_array")
     for i in range(2000):
         images.append(img)
         action, _ = model.predict(obs)
-        obs, _, _ ,_ = model.env.step(action)
-        img = model.env.render(mode="rgb_array")
+        obs, _, _ ,_ = env.step(action)
+        img = env.render(mode="rgb_array")
 
     imageio.mimsave(video_folder + "/result.gif", [np.array(img) for i, img in enumerate(images) if i%2 == 0], fps=29)
