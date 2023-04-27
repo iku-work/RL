@@ -56,7 +56,6 @@ class CameraSensor():
                                     renderer=p.ER_TINY_RENDERER,
                                     flags=p.ER_SEGMENTATION_MASK_OBJECT_AND_LINKINDEX
                                     )
-
         return imgs
 
     def getDepth(self, img):
@@ -97,9 +96,9 @@ class Forwarder:
                               basePosition=[0, 0, 0.1],
                               physicsClientId=client, 
                               #useMaximalCoordinates=True,
-                              flags=p.URDF_USE_INERTIA_FROM_FILE
-                                    | p.URDF_USE_SELF_COLLISION
-                                    | p.URDF_USE_SELF_COLLISION_EXCLUDE_PARENT
+                              flags=p.URDF_USE_SELF_COLLISION 
+                                    | p.URDF_USE_INERTIA_FROM_FILE
+                                    #| p.URDF_USE_SELF_COLLISION_EXCLUDE_PARENT
                               )
 
         #print(f_name)
@@ -120,8 +119,8 @@ class Forwarder:
 
         # Adding one more constraint to the right grapple
         # so it mirrors the left grapple 
-        joint_rev = p.createConstraint(self.forwarder, 7, 
-                                 self.forwarder, 6, 
+        joint_rev = p.createConstraint(self.forwarder, 8, 
+                                 self.forwarder, 7, 
                                  p.JOINT_GEAR, 
                                  jointAxis=(0,1,0), 
                                  parentFramePosition=(0,0,0), 
@@ -138,6 +137,8 @@ class Forwarder:
 
         self.active_joints = [0,1,2,5,7]
 
+        self.previous_action = []
+
 
     def apply_action(self, action):
         
@@ -153,12 +154,14 @@ class Forwarder:
         ---------------------------
         '''
 
-        #max_velocity = [ .15, .15, .15, .5, .5 ]
-        max_force = [ None, None, None, None, 5e4 ]
-        active_joints = [0,1,2,5,7]
+        max_velocity = [ .1, .1, .1, .1, .8, .8 ]
+        max_force = [ None, 5e5, None, None, None, 5e4 ]
+        active_joints = [0,1,2,3,6,8]
         # subject to calibration
-        self.action_scale = [.08, .05, .025, .05, .5] 
+        self.action_scale = [.15,.15,.15,.15,1,.5]
         
+        target_positions = []
+        current_positions = []
 
         joints = p.getJointStates(
             self.forwarder,
@@ -170,17 +173,24 @@ class Forwarder:
                 p.setJointMotorControl2(self.forwarder, 
                                         jnt,
                                         p.POSITION_CONTROL,
-                                        targetPosition=joints[ind][0] + (action[ind]*self.action_scale[ind]),
-                                        #maxVelocity=max_velocity[ind],
+                                        targetPosition= joints[ind][0] + action[ind]*self.action_scale[ind],
+                                        maxVelocity=max_velocity[ind],
                                         )        
             else:
                 p.setJointMotorControl2(self.forwarder, 
                                         jnt,
                                         p.POSITION_CONTROL,
-                                        targetPosition=joints[ind][0] + (action[ind]*self.action_scale[ind]),
-                                        force=max_force[ind]
+                                        targetPosition=joints[ind][0] + action[ind]*self.action_scale[ind],
+                                        force=max_force[ind],
+                                        maxVelocity = max_velocity[ind]
                                         )
+            target_positions.append(joints[ind][0] + (action[ind]*self.action_scale[ind]))
+            current_positions.append(joints[ind][0])
 
+        target_positions = np.array(target_positions)
+        current_positions = np.array(current_positions)
+        return target_positions, current_positions
+        
         '''
         p.setJointMotorControl2(self.forwarder, 0,
                             p.POSITION_CONTROL,
@@ -247,8 +257,8 @@ class Forwarder:
 class WoodPile():
 
     def __init__(self, initialWoodPos, initialWoodRot, layerDim, nLayers, offset):
-        self.initialWoodPos = initialWoodPos
-        self.initialWoodRot = initialWoodRot
+        self.initialWoodPos = initialWoodPos.copy()
+        self.initialWoodRot = initialWoodRot.copy()
         self.layerDim = layerDim
         self.nLayers = nLayers
         self.offset = offset
@@ -275,3 +285,88 @@ class WoodPile():
                     self.initialWoodPos[1] = 1
                     layer_old = layer
             self.initialWoodPos[2] += self.offset
+
+class TriggerVolume():
+
+    def __init__(self, origin, rot, dimensions):#l, w, h):
+        
+        self.origin = origin
+        self.z_rot = rot[-1]
+        self.l = dimensions[0]
+        self.w = dimensions[1]
+        self.h = dimensions[2]
+        self.vertices = self.getVertices()
+
+    def getVertices(self):
+        x = np.array([-self.w/2 , -self.w/2 , self.w/2 , self.w/2])
+        y = np.array([self.l/2, -self.l/2, -self.l/2, self.l/2])
+        vertices = np.stack((x,y), axis=1)
+        c, s = np.cos(self.z_rot), np.sin(self.z_rot)
+        R = np.array(((c, -s), (s, c)))
+
+        for vertex in range(len(vertices)):
+            vertices[vertex] = np.dot(R, vertices[vertex])
+            vertices[vertex][0] += self.origin[0]
+            vertices[vertex][1] += self.origin[1]
+
+        return vertices
+
+    def is_within_point(self, point):
+        is_within_square = self.test_point_2d(point[0], point[1])
+        z_min, z_max = self.origin[-1] - self.h/2, self.origin[-1] + self.h/2
+        is_withing_z = z_max > point[-1] > z_min 
+        return is_within_square and is_withing_z
+
+    def is_on_right_side(self, x, y, xy0, xy1):
+        x0, y0 = xy0
+        x1, y1 = xy1
+        a = float(y1 - y0)
+        b = float(x0 - x1)
+        c = - a*x0 - b*y0
+        return a*x + b*y + c >= 0
+
+    def test_point_2d(self, x, y):
+        num_vert = len(self.vertices)
+        is_right = [self.is_on_right_side(x, y, self.vertices[i], self.vertices[(i + 1) % num_vert]) for i in range(num_vert)]
+        all_left = not any(is_right)
+        all_right = all(is_right)
+        return all_left or all_right
+    
+    def is_within_body(self, bodyId):
+        pos, _ = p.getBasePositionAndOrientation(bodyId)
+        return self.is_within_point(pos)
+
+    def update(self):
+        self.vertices = self.getVertices()
+
+class MassSensor():
+
+    def __init__(self, fwdId, origin_offset=[0,0,1], triggerVolDim=[5, 2, 1.5], excludedBodiesIds=[]):
+        self.fwdId  = fwdId
+        self.excludedBodiesIds = excludedBodiesIds
+        self.excludedBodiesIds.append(fwdId)
+        self.base_pos, self.base_ori = p.getBasePositionAndOrientation(self.fwdId)
+        self.base_pos = np.array(self.base_pos)
+        self.base_ori = np.array(p.getEulerFromQuaternion(self.base_ori))
+        self.origin = self.getOriginFromBase(origin_offset)
+        self.triggerVol = TriggerVolume(self.origin, self.base_ori, triggerVolDim)
+        self.aabb = p.getAABB(fwdId)
+        self.aabb_min = self.aabb[0]
+        self.aabb_max = self.aabb[1]
+
+    def getOriginFromBase(self, offset=[0,0,0]):
+        offset = np.array(offset)
+        return self.base_pos + offset
+
+    def getMass(self):
+        #Update pos and rotation of trigger volume in case it changed
+        mass = 0
+        self.triggerVol.update()
+        overlappingObjs=p.getOverlappingObjects(self.aabb_min, self.aabb_max)
+        for _,obj in enumerate(overlappingObjs):
+            if(obj[0] not in self.excludedBodiesIds):
+                if(self.triggerVol.is_within_body(obj[0])):
+                    dynInfo = p.getDynamicsInfo(obj[0], -1)
+                    mass += dynInfo[0]
+        return mass
+        

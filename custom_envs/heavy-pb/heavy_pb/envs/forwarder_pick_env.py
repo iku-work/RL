@@ -1,5 +1,5 @@
 import gym
-from heavy_pb.resources.forwarder.forwarder import Forwarder, WoodPile
+from heavy_pb.resources.forwarder.forwarder import Forwarder, WoodPile, MassSensor
 import pybullet as p
 import numpy as np
 import pybullet_data
@@ -17,9 +17,20 @@ class ForwarderPick(gym.Env):
         
 
         # With np.int type it is a discrete shape 
-        self.action_space = gym.spaces.Box(
+        '''self.action_space = gym.spaces.Box(
             low=np.full((5,), -1, dtype = np.float32),
             high=np.full((5,), 1, dtype = np.float32),
+            dtype = np.int32
+        )'''
+
+        self.action_scale = np.array([.3, .3, .3, .3, .3])
+
+        self.action_low = np.full((6,), -1, dtype = np.int32) #* self.action_scale
+        self.action_high = np.full((6,), 1, dtype = np.int32)  #* self.action_scale
+
+        self.action_space = gym.spaces.Box(
+            low=self.action_low,
+            high= self.action_high,
             dtype = np.int32
         )
         #print(self.action_space.sample())
@@ -30,21 +41,36 @@ class ForwarderPick(gym.Env):
         )
 
         # Start the simulation
-        self.client = p.connect(p.DIRECT) # or p.DIRECT
+        self.client = p.connect(p.DIRECT)# p.GUI)#
         p.setAdditionalSearchPath(pybullet_data.getDataPath()) #optionally
         p.setGravity(0,0,-10)
         p.resetDebugVisualizerCamera(cameraDistance=4, cameraYaw=70, cameraPitch=-22, cameraTargetPosition=[3,0,2])
         p.setPhysicsEngineParameter(enableFileCaching=True)
-        p.setPhysicsEngineParameter(fixedTimeStep = 1/120.)
+        p.setPhysicsEngineParameter(fixedTimeStep = 1/50)
         #p.setRealTimeSimulation(1)
 
         self.plane = p.loadURDF("plane.urdf")
         self.forwarder = Forwarder(self.client)
         self.forwarderId = self.forwarder.forwarder
-        self.woodPile = WoodPile([3.5,1,0.5], [1.54 ,0, 1.54], 5, 3, .5)
+
+        self.initial_wood_pos = [3.5,1,0.5]
+        self.initial_wood_rot = [1.54 ,0, 1.54]
+        self.layer_dim = 2
+        self.n_layers = 1
+        self.wood_offset = .5
+        self.woodPile = WoodPile(self.initial_wood_pos, 
+                                  self.initial_wood_rot, 
+                                  self.layer_dim , 
+                                  self.n_layers, 
+                                  self.wood_offset
+                                  )
+
+        self.massSensor = MassSensor(self.forwarderId, 
+                                triggerVolDim=[4.5, 1.5, 1.5], 
+                                excludedBodiesIds=[self.plane])
 
         self.update_freq = 240
-        self.frameskip = 10
+        self.frameskip = 30
 
         self.rendered_img = None
         self.img = None
@@ -60,49 +86,60 @@ class ForwarderPick(gym.Env):
         #p.setTimeStep(1/self.update_freq, self.client)
         #self.
 
-        self.aabb = p.getAABB(self.forwarderId)
-        self.aabb_min = self.aabb[0]
-        self.aabb_max = self.aabb[1]
-
 
     def step(self, action):
         
         reward = 0
         done = False
         info = {}
-
-        forwarderId = self.forwarder.forwarder
         
-        driven_joints = [0,1,2,5,7]
-        self.forwarder.apply_action(action)
-        avg_delta = 1
+        target, current = self.forwarder.apply_action(action)
+        reward += self.massSensor.getMass()
+
+        if (self.check_grasp()):
+            reward += 0.1
+
+        if (self.check_collision_results()):
+            reward = -1
+            done = True
+            
 
         for _ in  range(self.frameskip):
             p.stepSimulation()
-        
-        '''# Frameskip with timeout?
 
+        '''
+        # Frameskip with timeout?
+        forwarderId = self.forwarder.forwarder
+        driven_joints = [0,1,2,5,7]
+        #self.forwarder.apply_action(action)
+        avg_delta = 1
         i = 0
-        timeout = 250
-        self.forwarder.apply_action(action)
+        timeout = 50
+        target_pos, current_pos = self.forwarder.apply_action(action)
+        target_pos = np.array(target_pos)
+
+        print('Target pos:', target_pos - current_pos)
+        #print('Current pos:', current_pos)
+
         while(abs(avg_delta) > .25):
             
-            jnt_target_pos = []
+            jnt_pos_now = []
             np_jnt_target_pos =np.zeros(len(driven_joints))
             jnt_states  = p.getJointStates(forwarderId, driven_joints)
 
             
             for jnt in jnt_states:
-                jnt_target_pos.append(jnt[0])
+                jnt_pos_now.append(jnt[0])
             
-            np_jnt_target_pos = np.array(jnt_target_pos)
-            delta = np_jnt_target_pos - action
+            np_jnt_pos_now = np.array(jnt_pos_now)
+            delta = np_jnt_pos_now - action 
+            
             avg_delta = np.average(delta)
             p.stepSimulation()
             i += 1
 
             if self.check_collision_results():
-                done = True
+                #done = True
                 reward = -1
                 break
             
@@ -112,22 +149,12 @@ class ForwarderPick(gym.Env):
             if (i>timeout):
                 break 
 
-            self.check_grasp()'''
-        
-        reward = self.getNumLogs()
-
-        if (self.check_grasp()):
-            reward += 0.1
-
-        if (self.check_collision_results()):
-            #done = True
-            reward = -1
-
-
+            self.check_grasp()
+        '''
         self.img = self.forwarder.camera.getCameraImage()
-        #obs = self.forwarder.get_observation()
+        obs = self.forwarder.get_observation()
         obs = self.get_depth_img().flatten()
-
+        obs = self.observation_space.sample()
         return obs, reward, done, info
     
     def reset(self):
@@ -137,7 +164,12 @@ class ForwarderPick(gym.Env):
 
         self.plane = p.loadURDF("plane.urdf")
         self.forwarder = Forwarder(self.client)
-        self.woodPile = WoodPile([3.5,1,0.5], [1.54 ,0, 1.54], 1, 1, .5)
+        self.woodPile = WoodPile(self.initial_wood_pos, 
+                                  self.initial_wood_rot, 
+                                  self.layer_dim , 
+                                  self.n_layers, 
+                                  self.wood_offset
+                                  )
         
         #p.enableJointForceTorqueSensor(self.forwarderId, 6)
         #p.enableJointForceTorqueSensor(self.forwarderId, 7)
@@ -150,6 +182,10 @@ class ForwarderPick(gym.Env):
         return obs
     
     def close(self):
+
+        p.disconnect()
+        plt.close()
+
         return super().close()
     
     def render(self, mode='human'):
@@ -181,18 +217,39 @@ class ForwarderPick(gym.Env):
 
         return depth_img
 
+    def getLookAtPoint(self, forwarderId, parentLinkId, linkId):
+
+        parentLink_pos, parentLink_ori, _,_,_,_ = p.getLinkState(forwarderId, parentLinkId)
+        parentLink_ori = link_ori = p.getEulerFromQuaternion(parentLink_ori)
+        parentLink_pos = np.array(parentLink_pos)
+
+        link_pos, link_ori,_,_,_,_= p.getLinkState(forwarderId, linkId)
+        link_pos = np.array(link_pos)
+        
+        link_ori = p.getEulerFromQuaternion(link_ori)
+        link_ori = np.array(link_pos)
+
+        dist = 10
+
+        look_at_vec = (link_pos - parentLink_pos) 
+        look_at_vec = look_at_vec / np.sqrt(look_at_vec[0]**2 + look_at_vec [1]**2 + look_at_vec[2]**2)
+        look_at_pos = parentLink_pos + dist*look_at_vec 
+        return look_at_pos
 
     def check_grasp(self): 
 
-        jnts = p.getJointStates(self.forwarderId, [6,7])
-        jnts_Fz = []
+        look_at_pos = self.getLookAtPoint(self.forwarderId, 5, 6)
+        parentLink_pos, parentLink_ori, _,_,_,_ = p.getLinkState(self.forwarderId, 6)
+        parentLink_pos = np.array(parentLink_pos)
 
-        for ind,jnt in enumerate(jnts):
-            jnts_Fz.append(jnt[2][2])
+        result = p.rayTest(parentLink_pos, look_at_pos)[0]
+        hit_pos = np.array(result[3])
+        hit_dist = np.linalg.norm(hit_pos - parentLink_pos)
 
-        avg_fz = sum(jnts_Fz) / len(jnts_Fz)
+        # Check if grapples are closed
+        grapple_pos = p.getJointState(self.forwarderId,7)[0]
 
-        if ((avg_fz // 1000) > 5):
+        if(hit_dist < .2 and grapple_pos < .1):
             return True
 
         return False 
@@ -238,7 +295,12 @@ class ForwarderPick(gym.Env):
 
         return overlap
     
-'''from time import sleep
+    def set_frame_skip(self, frameskip):
+        self.frameskip = frameskip
+
+
+'''
+from time import sleep
 
 fwd = ForwarderPick()
 
@@ -254,12 +316,10 @@ for i in range(100000):
 
     action = fwd.action_space.sample()
     obs, rew, done, _ = fwd.step(action)
-    
-    print(obs.shape)
+    print(np.max(obs), np.min(obs))
+    fwd.render()
 
-    #fwd.render()
-
-    if (i % 500) == 0 or done:
+    if (i % 200) == 0 or done:
         print("Reset at step: ", i)
         
         if (delta_high < fwd.delta_high):

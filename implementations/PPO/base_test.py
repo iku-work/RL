@@ -11,11 +11,66 @@ import os
 from stable_baselines3.common.callbacks import EvalCallback, CallbackList, BaseCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.logger import TensorBoardOutputFormat
-
-
 import imageio 
-        
-        
+
+class CustomCallback(BaseCallback):
+
+    def __init__(self, video_folder: str, verbose: int = 0,  env_id: str = '', record_len: int = 500, gif_name: str = ''):
+        super().__init__(verbose)
+        # Those variables will be accessible in the callback
+        # (they are defined in the base class)
+        # The RL model
+        self.model = None  # type: BaseAlgorithm
+        # An alias for self.model.get_env(), the environment used for training
+        self.training_env = None  # type: Union[gym.Env, VecEnv, None]
+        # Number of time the callback was called
+        # self.n_calls = 0  # type: int
+        self.num_timesteps = 0  # type: int
+        # local and global variables
+        # self.locals = None  # type: Dict[str, Any]
+        # self.globals = None  # type: Dict[str, Any]
+        # The logger object, used to report things in the terminal
+        # self.logger = None  # stable_baselines3.common.logger
+        # # Sometimes, for event callback, it is useful
+        # # to have access to the parent object
+        # self.parent = None  # type: Optional[BaseCallback]
+        self.video_folder = video_folder
+        self.env_id = env_id
+        self.record_len = record_len
+        self.gif_name = gif_name
+
+    def record_gif(self, model, env_id, record_len, video_folder, gif_name):
+
+        gif_name = '{}_{}'.format(gif_name, self.num_timesteps)
+        env = gym.make(env_id)  
+    
+        images = []
+        obs = env.reset()
+        img = env.render(mode="rgb_array")
+        for i in range(record_len):
+
+            images.append(img)
+            action, _ = self.model.predict(obs, deterministic=True)
+            obs, rew, done ,_ = env.step(action)
+            img = env.render(mode="rgb_array")
+
+            if done:
+                obs = env.reset()
+
+        isExist = os.path.exists(video_folder)
+        if not isExist:
+            # Create a new directory because it does not exist
+            os.makedirs(video_folder)
+
+        env_name = env_id.split(':')[-1]
+        imageio.mimsave(video_folder + "/result_{}_{}.gif".format(gif_name, env_name), [np.array(img) for i, img in enumerate(images) if i%2 == 0], fps=29)
+        env.close()
+    
+    def _on_step(self) -> bool:
+        return True
+
+    def _on_rollout_end(self) -> None:
+        self.record_gif(self.model, self.env_id, self.record_len, self.video_folder, self.gif_name)
 
 
 
@@ -45,49 +100,41 @@ def make_env(env_id, rank, seed=0):
     set_random_seed(seed)
     return _init
 
+if __name__ == '__main__':
 
-
-if __name__ == "__main__":
-    env_id = "heavy_pb:forwarder-v0" #"CartPole-v1" 
-    num_cpu = 3  # Number of processes to use
+    env_name = 'forwarder-v0'
+    env_id = "heavy_pb:{}".format(env_name) 
+    num_cpu = 5  # Number of processes to use
     # Create the vectorized environment
     env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
+    #env = gym.make(env_id)
     env = VecNormalize(env, norm_obs=True, norm_reward=False)
 
-
-
-    #eval_env = DummyVecEnv([make_env(env_id, i) for i in range(num_cpu)])
     eval_callback = EvalCallback(env ,
-                             best_model_save_path='../../models',
-                             log_path=log_dir,
-                             eval_freq=12000,
-                             n_eval_episodes=10,
-                             deterministic=True,
-                             render=False,
-                             callback_on_new_best=None)
+                                best_model_save_path='../../models',
+                                log_path=log_dir,
+                                eval_freq=5000,
+                                n_eval_episodes=10,
+                                deterministic=True,
+                                render=False,
+                                callback_on_new_best=None)
 
-    
     #ent_coefs = [.01, .05, .1, .5]
-    #frame_skips = [20, 40, 80, 120, 160]
+    frame_skips = [10, 30, 60, 80, 120]
 
-    #for fs in frame_skips:
-    #env.env_method('set_frame_skip', fs)
-    model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir)
+    for fs in frame_skips:
+        video_folder = "logs/videos/{}_{}/".format('fs', fs) 
+        customCallback = CustomCallback(video_folder=video_folder, 
+                                        env_id=env_id, 
+                                        gif_name='fs_{}'.format(fs))
+
+        env.env_method('set_frame_skip', fs)
+        model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir, )
 
         #model = PPO('MlpPolicy', env, learning_rate=param[0], clip_range=param[1], ent_coef=param[2], n_steps=param[3], n_epochs=param[4])
-    model.learn(total_timesteps=5000, tb_log_name='ppo_control', callback=eval_callback) # + str(fs))# + str(ent_coef))#, callback=mean_reward_tracker )#, callback=clipper)
-    model.save(save_dir + 'control') # + str(fs))
-    
-    env = gym.make(env_id)
-
-    video_folder = "logs/videos/"
-    images = []
-    obs = env.reset()
-    img = env.render(mode="rgb_array")
-    for i in range(2000):
-        images.append(img)
-        action, _ = model.predict(obs)
-        obs, _, _ ,_ = env.step(action)
-        img = env.render(mode="rgb_array")
-
-    imageio.mimsave(video_folder + "/result.gif", [np.array(img) for i, img in enumerate(images) if i%2 == 0], fps=29)
+        model.learn(total_timesteps=15000, 
+                    tb_log_name='ppo_{}_{}_{}'.format(env_name, 'fs', fs), 
+                    callback=[eval_callback, customCallback]
+                    )
+        model.save(save_dir + 'control_{}_fs{}'.format(env_id, str(fs)))
+        
