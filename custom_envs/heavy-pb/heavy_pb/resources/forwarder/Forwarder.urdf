@@ -230,7 +230,7 @@
   <parent link="base_link"/>
   <child link="cranePillar1"/>
   <axis xyz="-0.0 0.000365 1.0"/>
-  <limit lower="-1.04" upper="1.04"/>
+  <limit lower="-1.54" upper="1.54"/>
 </joint>
 <transmission name="Revolute_1_tran">
   <type>transmission_interface/SimpleTransmission</type>
@@ -279,6 +279,41 @@
   </actuator>
 </transmission>
 
+<joint name="Slider_37" type="prismatic">
+  <origin xyz="-0.14 1.539638 -0.097247" rpy="0 0 0"/>
+  <parent link="extension_arm1"/>
+  <child link="extension1"/>
+  <axis xyz="-0.0 -0.991429 0.130644"/>
+  <limit upper="1" lower="-.8"/>
+</joint>
+<transmission name="Slider_37_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="Slider_37">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="Slider_37_actr">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<joint name="Revolute_38" type="continuous">
+  <origin xyz="-0.03 1.91394 -0.132446" rpy="0 0 0"/>
+  <parent link="extension1"/>
+  <child link="intermediateHookJnt1"/>
+  <axis xyz="1.0 -0.0 0.0"/>
+</joint>
+<transmission name="Revolute_38_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="Revolute_38">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="Revolute_38_actr">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
 <joint name="Revolute_16" type="continuous">
   <origin xyz="0.06 -0.001061 -0.235875" rpy="0 0 0"/>
   <parent link="intermediateHookJnt1"/>
@@ -295,8 +330,6 @@
     <mechanicalReduction>1</mechanicalReduction>
   </actuator>
 </transmission>
-
-
 
 <joint name="Revolute_26" type="continuous">
   <origin xyz="0.0 -0.076801 -0.204759" rpy="0 0 0"/>
@@ -347,41 +380,6 @@
     <hardwareInterface>PositionJointInterface</hardwareInterface>
   </joint>
   <actuator name="Revolute_31_actr">
-    <hardwareInterface>PositionJointInterface</hardwareInterface>
-    <mechanicalReduction>1</mechanicalReduction>
-  </actuator>
-</transmission>
-
-<joint name="Slider_37" type="prismatic">
-  <origin xyz="-0.14 1.539638 -0.097247" rpy="0 0 0"/>
-  <parent link="extension_arm1"/>
-  <child link="extension1"/>
-  <axis xyz="-0.0 -0.991429 0.130644"/>
-  <limit upper="1" lower="-.8"/>
-</joint>
-<transmission name="Slider_37_tran">
-  <type>transmission_interface/SimpleTransmission</type>
-  <joint name="Slider_37">
-    <hardwareInterface>PositionJointInterface</hardwareInterface>
-  </joint>
-  <actuator name="Slider_37_actr">
-    <hardwareInterface>PositionJointInterface</hardwareInterface>
-    <mechanicalReduction>1</mechanicalReduction>
-  </actuator>
-</transmission>
-
-<joint name="Revolute_38" type="continuous">
-  <origin xyz="-0.03 1.91394 -0.132446" rpy="0 0 0"/>
-  <parent link="extension1"/>
-  <child link="intermediateHookJnt1"/>
-  <axis xyz="1.0 -0.0 0.0"/>
-</joint>
-<transmission name="Revolute_38_tran">
-  <type>transmission_interface/SimpleTransmission</type>
-  <joint name="Revolute_38">
-    <hardwareInterface>PositionJointInterface</hardwareInterface>
-  </joint>
-  <actuator name="Revolute_38_actr">
     <hardwareInterface>PositionJointInterface</hardwareInterface>
     <mechanicalReduction>1</mechanicalReduction>
   </actuator>

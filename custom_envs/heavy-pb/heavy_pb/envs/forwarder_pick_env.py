@@ -23,15 +23,17 @@ class ForwarderPick(gym.Env):
             dtype = np.int32
         )'''
 
-        self.action_scale = np.array([.3, .3, .3, .3, .3])
+        self.action_scale = np.array([.1, .1, .1, .1, .1, .1])
 
-        self.action_low = np.full((6,), -1, dtype = np.int32) #* self.action_scale
-        self.action_high = np.full((6,), 1, dtype = np.int32)  #* self.action_scale
+        self.action_low = -1
+        self.action_max = 1
+        self.action_low_arr = np.full((6,), self.action_low, dtype = np.float32) #* self.action_scale
+        self.action_high_arr = np.full((6,), self.action_max, dtype = np.float32)  #* self.action_scale
 
         self.action_space = gym.spaces.Box(
-            low=self.action_low,
-            high= self.action_high,
-            dtype = np.int32
+            low=self.action_low_arr,
+            high= self.action_high_arr,
+            dtype = np.float32
         )
         #print(self.action_space.sample())
 
@@ -40,22 +42,25 @@ class ForwarderPick(gym.Env):
             high=np.full((3600,), np.inf, dtype = np.float32),
         )
 
+        self.update_freq = 240
+        self.frameskip = 30
+
         # Start the simulation
-        self.client = p.connect(p.DIRECT)# p.GUI)#
+        self.client = p.connect(p.DIRECT)# p.GUI)# 
         p.setAdditionalSearchPath(pybullet_data.getDataPath()) #optionally
         p.setGravity(0,0,-10)
         p.resetDebugVisualizerCamera(cameraDistance=4, cameraYaw=70, cameraPitch=-22, cameraTargetPosition=[3,0,2])
         p.setPhysicsEngineParameter(enableFileCaching=True)
-        p.setPhysicsEngineParameter(fixedTimeStep = 1/50)
+        p.setPhysicsEngineParameter(fixedTimeStep = 1/self.update_freq)
         #p.setRealTimeSimulation(1)
 
         self.plane = p.loadURDF("plane.urdf")
         self.forwarder = Forwarder(self.client)
         self.forwarderId = self.forwarder.forwarder
 
-        self.initial_wood_pos = [3.5,1,0.5]
+        self.initial_wood_pos = [3.5,0,0.5]
         self.initial_wood_rot = [1.54 ,0, 1.54]
-        self.layer_dim = 2
+        self.layer_dim = 10
         self.n_layers = 1
         self.wood_offset = .5
         self.woodPile = WoodPile(self.initial_wood_pos, 
@@ -69,14 +74,11 @@ class ForwarderPick(gym.Env):
                                 triggerVolDim=[4.5, 1.5, 1.5], 
                                 excludedBodiesIds=[self.plane])
 
-        self.update_freq = 240
-        self.frameskip = 30
-
         self.rendered_img = None
         self.img = None
         self.depth_img = None
 
-
+        # For wait function
         self.delta_high = 0
 
         p.enableJointForceTorqueSensor(self.forwarderId, 6)
@@ -93,7 +95,14 @@ class ForwarderPick(gym.Env):
         done = False
         info = {}
         
-        target, current = self.forwarder.apply_action(action)
+        action = self.forwarder.incrementJointPosByAction(action, self.action_scale)
+        #action = self.forwarder.scaleToJntsLimits(action)
+        #self.forwarder.apply_action(action)
+        
+        for _ in  range(self.frameskip):
+            self.forwarder.apply_action(action)
+            p.stepSimulation()
+
         reward += self.massSensor.getMass()
 
         if (self.check_grasp()):
@@ -102,10 +111,7 @@ class ForwarderPick(gym.Env):
         if (self.check_collision_results()):
             reward = -1
             done = True
-            
 
-        for _ in  range(self.frameskip):
-            p.stepSimulation()
 
         '''
         # Frameskip with timeout?

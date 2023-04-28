@@ -84,7 +84,6 @@ class CNN(nn.Module):
         return x'''
 
 
-
 # testing purposes, delete later
 import random
 
@@ -100,7 +99,7 @@ class Forwarder:
                                     | p.URDF_USE_INERTIA_FROM_FILE
                                     #| p.URDF_USE_SELF_COLLISION_EXCLUDE_PARENT
                               )
-
+        
         #print(f_name)
         '''
         =====================================================
@@ -132,12 +131,52 @@ class Forwarder:
             #print(info)
             print('Joint number: ', info[0], ' Joint name: ', info[12])'''
 
-
         self.camera = CameraSensor(self.forwarder, 2,4,-1)
 
-        self.active_joints = [0,1,2,5,7]
+        self.max_velocity = [ .1, .1, .1, .1, .8, .8 ]
+        self.max_force = [ None, 5e5, None, None, None, 5e4 ]
+        self.active_joints = [0,1,2,3,6,8]
+        # subject to calibration
+        
 
-        self.previous_action = []
+        self.action_min, self.action_max = self.getJointsLimits()
+
+    def getJointsLimits(self):
+
+        action_min = list()
+        action_max = list()
+        
+        for jnt in self.active_joints:
+            info = p.getJointInfo(self.forwarder, jnt)
+            action_min.append(info[8])
+            action_max.append(info[9])
+
+        return action_min, action_max
+
+    def incrementJointPosByAction(self, action, action_scale = [.15,.15,.15,.15,1,.5]):
+
+        joints_actions = list()
+        joints = p.getJointStates(
+            self.forwarder,
+            self.active_joints
+        )
+
+        for ind, jnt in enumerate(joints):
+            joints_actions.append(joints[ind][0] + action[ind]*action_scale[ind])
+
+        return joints_actions
+
+    def scaleToJntsLimits(self, action, model_action_min=-1, model_action_max=1):
+        joints_actions = list()
+        for ind, jnt in enumerate(self.active_joints):
+            #new_value = ( (old_value - old_min) / (old_max - old_min) ) * (new_max - new_min) + new_min
+            #print(model_action_min, model_action_max, model_action_max[ind], model_action_min[ind])
+            new_value_1 = ( (action[ind] - model_action_min) / (model_action_max - model_action_min) )
+            new_value_2 = (self.action_max[ind] - self.action_min[ind])
+            new_value =  new_value_1 * new_value_2 + self.action_min[ind]
+            joints_actions.append(new_value)
+
+        return joints_actions
 
 
     def apply_action(self, action):
@@ -154,77 +193,23 @@ class Forwarder:
         ---------------------------
         '''
 
-        max_velocity = [ .1, .1, .1, .1, .8, .8 ]
-        max_force = [ None, 5e5, None, None, None, 5e4 ]
-        active_joints = [0,1,2,3,6,8]
-        # subject to calibration
-        self.action_scale = [.15,.15,.15,.15,1,.5]
-        
-        target_positions = []
-        current_positions = []
-
-        joints = p.getJointStates(
-            self.forwarder,
-            active_joints
-        )
-        
-        for ind,jnt in enumerate(active_joints):
-            if(max_force[ind] == None):
+        for ind,jnt in enumerate(self.active_joints):
+            if(self.max_force[ind] == None):
                 p.setJointMotorControl2(self.forwarder, 
                                         jnt,
                                         p.POSITION_CONTROL,
-                                        targetPosition= joints[ind][0] + action[ind]*self.action_scale[ind],
-                                        maxVelocity=max_velocity[ind],
+                                        targetPosition= action[ind],
+                                        maxVelocity=self.max_velocity[ind],
                                         )        
             else:
                 p.setJointMotorControl2(self.forwarder, 
                                         jnt,
                                         p.POSITION_CONTROL,
-                                        targetPosition=joints[ind][0] + action[ind]*self.action_scale[ind],
-                                        force=max_force[ind],
-                                        maxVelocity = max_velocity[ind]
+                                        targetPosition=action[ind],
+                                        force=self.max_force[ind],
+                                        maxVelocity = self.max_velocity[ind]
                                         )
-            target_positions.append(joints[ind][0] + (action[ind]*self.action_scale[ind]))
-            current_positions.append(joints[ind][0])
-
-        target_positions = np.array(target_positions)
-        current_positions = np.array(current_positions)
-        return target_positions, current_positions
         
-        '''
-        p.setJointMotorControl2(self.forwarder, 0,
-                            p.POSITION_CONTROL,
-                            targetPosition= action[0],#action[0],
-                            maxVelocity=.15
-                            )
-
-        p.setJointMotorControl2(self.forwarder, 1,
-                            p.POSITION_CONTROL,
-                            targetPosition= action[1],#action[1],
-                            maxVelocity=.15,
-                            force=2e5
-                            )   
-
-        p.setJointMotorControl2(self.forwarder, 2,
-                            p.POSITION_CONTROL,
-                            targetPosition=action[2],
-                            maxVelocity=.15
-                            )     
-
-        p.setJointMotorControl2(self.forwarder, 5,
-                        p.POSITION_CONTROL,
-                        targetPosition=action[3]*1.54,
-                        maxVelocity=.5
-                        )     
-        
-        p.setJointMotorControl2(self.forwarder, 7,
-                        p.POSITION_CONTROL,
-                        targetPosition=action[4],
-                        maxVelocity=.5,
-                        force=5.5e4
-                        ) '''
-
-
     def get_observation(self):
 
         observation = np.array([])
