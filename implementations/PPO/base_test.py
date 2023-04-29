@@ -77,6 +77,9 @@ class CustomCallback(BaseCallback):
 save_dir = 'models/PPO'
 log_dir = 'logs'
 
+if(os.name != 'posix'):
+    os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+
 #if not os.path.exists(save_dir):
 #    os.makedirs(save_dir)  
 
