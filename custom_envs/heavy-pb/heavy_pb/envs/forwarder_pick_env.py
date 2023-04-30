@@ -42,8 +42,9 @@ class ForwarderPick(gym.Env):
             high=np.full((3600,), np.inf, dtype = np.float32),
         )
 
-        self.update_freq = 60
-        self.frameskip = 120
+        
+        self.update_freq =  60
+        self.frameskip = 80
 
         # Start the simulation
         self.client = p.connect(p.DIRECT)# p.GUI)# 
@@ -51,8 +52,9 @@ class ForwarderPick(gym.Env):
         p.setGravity(0,0,-10)
         p.resetDebugVisualizerCamera(cameraDistance=4, cameraYaw=70, cameraPitch=-22, cameraTargetPosition=[3,0,2])
         p.setPhysicsEngineParameter(enableFileCaching=True)
+        
+        p.setRealTimeSimulation(0)
         p.setPhysicsEngineParameter(fixedTimeStep = 1/self.update_freq)
-        #p.setRealTimeSimulation(1)
 
         self.plane = p.loadURDF("plane.urdf")
         self.forwarder = Forwarder(self.client)
@@ -352,7 +354,7 @@ for i in range(100000):
     action = fwd.action_space.sample()
     obs, rew, done, _ = fwd.step(action)
     #print(np.max(obs), np.min(obs))
-    #fwd.render()
+    fwd.render()
 
     if (i % 200) == 0 or done:
         print("Reset at step: ", i)

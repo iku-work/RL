@@ -127,7 +127,7 @@ if __name__ == '__main__':
                                 callback_on_new_best=None)
 
     #ent_coefs = [.01, .05, .1, .5]
-    frame_skips = [10, 30, 60, 80, 120]
+    frame_skips = [30, 60, 80, 120]
 
 
     for fs in frame_skips:
@@ -140,7 +140,7 @@ if __name__ == '__main__':
 
         env.env_method('set_frame_skip', fs)
 
-        model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir, n_steps=4096*num_cpu)
+        model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir, n_steps=4096)
 
         #model = PPO('MlpPolicy', env, learning_rate=param[0], clip_range=param[1], ent_coef=param[2], n_steps=param[3], n_epochs=param[4])
         model.learn(total_timesteps=350000, 
