@@ -124,8 +124,8 @@ class ForwarderPick(gym.Env):
         done = False
         info = {}
 
-        action = self.forwarder.incrementJointPosByAction(action, self.action_scale)
-        #action = self.forwarder.scaleToJntsLimits(action)
+        #action = self.forwarder.incrementJointPosByAction(action, self.action_scale)
+        action = self.forwarder.scaleToJntsLimits(action)
         #self.forwarder.apply_action(action)
         
         #for _ in  range(self.frameskip):
