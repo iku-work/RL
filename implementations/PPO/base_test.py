@@ -16,7 +16,7 @@ import imageio
 
 class CustomCallback(BaseCallback):
 
-    def __init__(self, video_folder: str, verbose: int = 0,  env_id: str = '', record_len: int = 500, gif_name: str = ''):
+    def __init__(self, video_folder: str, verbose: int = 0,  env_id: str = '', record_len: int = 500, gif_name: str = '', rec_freq: int = 10000):
         super().__init__(verbose)
         # Those variables will be accessible in the callback
         # (they are defined in the base class)
@@ -39,6 +39,8 @@ class CustomCallback(BaseCallback):
         self.env_id = env_id
         self.record_len = record_len
         self.gif_name = gif_name
+        self.previous_rec_timestep = 0
+        self.rec_freq = rec_freq
 
     def record_gif(self, model, env_id, record_len, video_folder, gif_name):
 
@@ -71,7 +73,8 @@ class CustomCallback(BaseCallback):
         return True
 
     def _on_rollout_end(self) -> None:
-        self.record_gif(self.model, self.env_id, self.record_len, self.video_folder, self.gif_name)
+        if(self.num_timesteps - self.previous_rec_timestep > self.rec_freq):
+            self.record_gif(self.model, self.env_id, self.record_len, self.video_folder, self.gif_name)
 
 
 
@@ -117,7 +120,7 @@ if __name__ == '__main__':
     eval_callback = EvalCallback(env ,
                                 best_model_save_path='../../models',
                                 log_path=log_dir,
-                                eval_freq=5000,
+                                eval_freq=12000,
                                 n_eval_episodes=10,
                                 deterministic=True,
                                 render=False,
@@ -131,14 +134,15 @@ if __name__ == '__main__':
         video_folder = "logs/videos/{}_{}/".format('fs', fs) 
         customCallback = CustomCallback(video_folder=video_folder, 
                                         env_id=env_id, 
-                                        gif_name='fs_{}'.format(fs))
+                                        gif_name='fs_{}'.format(fs),
+                                        rec_freq=1e6)
 
         env.env_method('set_frame_skip', fs)
 
         model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir)
 
         #model = PPO('MlpPolicy', env, learning_rate=param[0], clip_range=param[1], ent_coef=param[2], n_steps=param[3], n_epochs=param[4])
-        model.learn(total_timesteps=15000, 
+        model.learn(total_timesteps=350000, 
                     tb_log_name='ppo_{}_{}_{}'.format(env_name, 'fs', fs), 
                     callback=[eval_callback, customCallback],
 
