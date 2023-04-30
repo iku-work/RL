@@ -135,17 +135,17 @@ if __name__ == '__main__':
         customCallback = CustomCallback(video_folder=video_folder, 
                                         env_id=env_id, 
                                         gif_name='fs_{}'.format(fs),
-                                        rec_freq=1e6)
+                                        rec_freq=1e6
+                                        )
 
         env.env_method('set_frame_skip', fs)
 
-        model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir)
+        model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir, n_steps=20000)
 
         #model = PPO('MlpPolicy', env, learning_rate=param[0], clip_range=param[1], ent_coef=param[2], n_steps=param[3], n_epochs=param[4])
         model.learn(total_timesteps=350000, 
                     tb_log_name='ppo_{}_{}_{}'.format(env_name, 'fs', fs), 
-                    callback=[eval_callback, customCallback],
-
+                    callback=[eval_callback, customCallback]
                     )
         model.save(save_dir + 'control_{}_fs{}'.format(env_id, str(fs)))
         
