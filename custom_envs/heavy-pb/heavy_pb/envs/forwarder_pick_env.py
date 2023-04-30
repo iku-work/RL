@@ -23,7 +23,7 @@ class ForwarderPick(gym.Env):
             dtype = np.int32
         )'''
 
-        self.action_scale = np.array([.1, .1, .1, .1, .1, .1])
+        self.action_scale = np.array([.15, .15, .15, .15, .15, .15])
 
         self.action_low = -1
         self.action_max = 1
@@ -43,7 +43,7 @@ class ForwarderPick(gym.Env):
         )
 
         self.update_freq = 60
-        self.frameskip = 100
+        self.frameskip = 120
 
         # Start the simulation
         self.client = p.connect(p.DIRECT)# p.GUI)# 
@@ -95,14 +95,14 @@ class ForwarderPick(gym.Env):
         avg_delta = 1
         i = 0
 
-        self.forwarder.apply_action(action)
-
         for _ in range(self.frameskip):
-            
+            self.forwarder.apply_action(action)
+
+            p.stepSimulation()
             jnt_pos_now = []
             #np_jnt_target_pos =np.zeros(len(self.forwarder.active_joints))
             jnt_states  = p.getJointStates(forwarderId, self.forwarder.active_joints)
-
+            
             for jnt in jnt_states:
                 jnt_pos_now.append(jnt[0])
             
@@ -110,22 +110,13 @@ class ForwarderPick(gym.Env):
             delta = np_jnt_pos_now - action 
             
             avg_delta = np.average(delta)
-            p.stepSimulation()
+            
             i += 1
 
-            if (abs(avg_delta) > .25):
+            if (np.abs(avg_delta) < .01):
                 break
 
-            if self.check_collision_results():
-                #done = True
-                reward = -1
-                break
-            
-            if ((avg_delta <= .1) and (i > self.delta_high)):
-                self.delta_high = i
-            
-            self.check_grasp()
-
+        print(i)
         return True
 
     def step(self, action):
@@ -133,9 +124,9 @@ class ForwarderPick(gym.Env):
         reward = 0
         done = False
         info = {}
-        
-        #action = self.forwarder.incrementJointPosByAction(action, self.action_scale)
-        action = self.forwarder.scaleToJntsLimits(action)
+
+        action = self.forwarder.incrementJointPosByAction(action, self.action_scale)
+        #action = self.forwarder.scaleToJntsLimits(action)
         #self.forwarder.apply_action(action)
         
         #for _ in  range(self.frameskip):
@@ -143,7 +134,6 @@ class ForwarderPick(gym.Env):
         #    p.stepSimulation()
 
         self.actWithWait(action)
-
         reward += self.massSensor.getMass()
 
         if (self.check_grasp()):
@@ -152,7 +142,6 @@ class ForwarderPick(gym.Env):
         if (self.check_collision_results()):
             reward = -1
             done = True
-
 
         '''
         # Frameskip with timeout?
@@ -363,8 +352,8 @@ for i in range(100000):
 
     action = fwd.action_space.sample()
     obs, rew, done, _ = fwd.step(action)
-    print(np.max(obs), np.min(obs))
-    fwd.render()
+    #print(np.max(obs), np.min(obs))
+    #fwd.render()
 
     if (i % 200) == 0 or done:
         print("Reset at step: ", i)

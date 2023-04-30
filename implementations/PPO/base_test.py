@@ -13,6 +13,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.logger import TensorBoardOutputFormat
 import imageio 
 
+
 class CustomCallback(BaseCallback):
 
     def __init__(self, video_folder: str, verbose: int = 0,  env_id: str = '', record_len: int = 500, gif_name: str = ''):
@@ -107,7 +108,7 @@ if __name__ == '__main__':
 
     env_name = 'forwarder-v0'
     env_id = "heavy_pb:{}".format(env_name) 
-    num_cpu = 5  # Number of processes to use
+    num_cpu = 3  # Number of processes to use
     # Create the vectorized environment
     env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
     #env = gym.make(env_id)
@@ -133,12 +134,14 @@ if __name__ == '__main__':
                                         gif_name='fs_{}'.format(fs))
 
         env.env_method('set_frame_skip', fs)
+
         model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir)
 
         #model = PPO('MlpPolicy', env, learning_rate=param[0], clip_range=param[1], ent_coef=param[2], n_steps=param[3], n_epochs=param[4])
         model.learn(total_timesteps=15000, 
                     tb_log_name='ppo_{}_{}_{}'.format(env_name, 'fs', fs), 
-                    callback=[eval_callback, customCallback]
+                    callback=[eval_callback, customCallback],
+
                     )
         model.save(save_dir + 'control_{}_fs{}'.format(env_id, str(fs)))
         
