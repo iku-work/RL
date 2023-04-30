@@ -116,7 +116,6 @@ class ForwarderPick(gym.Env):
             if (np.abs(avg_delta) < .01):
                 break
 
-        print(i)
         return True
 
     def step(self, action):
