@@ -140,7 +140,7 @@ if __name__ == '__main__':
 
         env.env_method('set_frame_skip', fs)
 
-        model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir, n_steps=20000)
+        model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir, n_steps=4096*num_cpu)
 
         #model = PPO('MlpPolicy', env, learning_rate=param[0], clip_range=param[1], ent_coef=param[2], n_steps=param[3], n_epochs=param[4])
         model.learn(total_timesteps=350000, 
