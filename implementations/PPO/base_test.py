@@ -73,8 +73,9 @@ class CustomCallback(BaseCallback):
         return True
 
     def _on_rollout_end(self) -> None:
-        if(self.num_timesteps - self.previous_rec_timestep > self.rec_freq):
+        if(int(self.num_timesteps - self.previous_rec_timestep) > self.rec_freq):
             self.record_gif(self.model, self.env_id, self.record_len, self.video_folder, self.gif_name)
+            self.previous_rec_timestep = self.num_timesteps
 
 
 
@@ -131,6 +132,7 @@ if __name__ == '__main__':
 
 
     for fs in frame_skips:
+
         video_folder = "logs/videos/{}_{}/".format('fs', fs) 
         customCallback = CustomCallback(video_folder=video_folder, 
                                         env_id=env_id, 
@@ -140,7 +142,7 @@ if __name__ == '__main__':
 
         env.env_method('set_frame_skip', fs)
 
-        model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir, n_steps=4096)
+        model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir)
 
         #model = PPO('MlpPolicy', env, learning_rate=param[0], clip_range=param[1], ent_coef=param[2], n_steps=param[3], n_epochs=param[4])
         model.learn(total_timesteps=350000, 

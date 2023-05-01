@@ -54,18 +54,11 @@ class CameraSensor():
                                     view_matrix,
                                     projection_matrix, shadow=False,
                                     renderer=p.ER_TINY_RENDERER,
-                                    flags=p.ER_SEGMENTATION_MASK_OBJECT_AND_LINKINDEX
+                                    #flags=p.ER_SEGMENTATION_MASK_OBJECT_AND_LINKINDEX
                                     )
         return imgs
 
-    def getDepth(self, img):
-        
-        depth_matrix = img[4]
 
-        depth_tensor = from_numpy(depth_matrix)
-        depth_tensor /= self.far
-
-        return depth_tensor
     
 '''# For visual observation processing 
 import torch.nn as nn

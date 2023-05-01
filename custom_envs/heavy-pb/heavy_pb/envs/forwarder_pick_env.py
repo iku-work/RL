@@ -11,40 +11,27 @@ class ForwarderPick(gym.Env):
     def __init__(self):
         super().__init__()
 
-        #self.action_space = gym.spaces.MultiDiscrete(low=np.array([-1,-1,-1]),
-        #                                             high=np.array([1,1,1]))
-        #print(self.action_space.sample())
-        
-
-        # With np.int type it is a discrete shape 
-        '''self.action_space = gym.spaces.Box(
-            low=np.full((5,), -1, dtype = np.float32),
-            high=np.full((5,), 1, dtype = np.float32),
-            dtype = np.int32
-        )'''
-
-        self.action_scale = np.array([.15, .15, .15, .15, .15, .15])
+        self.action_scale = np.array([.1, .1, .1, .1, .1, .1])
 
         self.action_low = -1
         self.action_max = 1
-        self.action_low_arr = np.full((6,), self.action_low, dtype = np.float32) #* self.action_scale
-        self.action_high_arr = np.full((6,), self.action_max, dtype = np.float32)  #* self.action_scale
+        self.action_low_arr = np.full((6,), self.action_low, dtype = np.int32) #* self.action_scale
+        self.action_high_arr = np.full((6,), self.action_max, dtype = np.int32)  #* self.action_scale
 
         self.action_space = gym.spaces.Box(
             low=self.action_low_arr,
             high= self.action_high_arr,
-            dtype = np.float32
+            dtype = np.int32
         )
-        #print(self.action_space.sample())
+
 
         self.observation_space = gym.spaces.Box(
             low=np.full((3600,), -np.inf, dtype = np.float32),
             high=np.full((3600,), np.inf, dtype = np.float32),
         )
 
-        
-        self.update_freq =  60
-        self.frameskip = 80
+        self.update_freq =  120
+        self.frameskip = 240
 
         # Start the simulation
         self.client = p.connect(p.DIRECT)# p.GUI)# 
@@ -86,6 +73,9 @@ class ForwarderPick(gym.Env):
         p.enableJointForceTorqueSensor(self.forwarderId, 6)
         p.enableJointForceTorqueSensor(self.forwarderId, 7)
 
+        self.vis_obs_width = 60
+        self.vis_obs_height = 60
+
         # Set timestep
         #p.setTimeStep(1/self.update_freq, self.client)
         #self.
@@ -115,10 +105,9 @@ class ForwarderPick(gym.Env):
             
             i += 1
 
-            if (np.abs(avg_delta) < .01):
+            if (np.abs(avg_delta) < .01):                
                 break
 
-        return True
 
     def step(self, action):
         
@@ -126,8 +115,8 @@ class ForwarderPick(gym.Env):
         done = False
         info = {}
 
-        #action = self.forwarder.incrementJointPosByAction(action, self.action_scale)
-        action = self.forwarder.scaleToJntsLimits(action)
+        action = self.forwarder.incrementJointPosByAction(action, self.action_scale)
+        #action = self.forwarder.scaleToJntsLimits(action)
         #self.forwarder.apply_action(action)
         
         #for _ in  range(self.frameskip):
@@ -144,50 +133,6 @@ class ForwarderPick(gym.Env):
             reward = -1
             done = True
 
-        '''
-        # Frameskip with timeout?
-        forwarderId = self.forwarder.forwarder
-        driven_joints = [0,1,2,5,7]
-        #self.forwarder.apply_action(action)
-        avg_delta = 1
-        i = 0
-        timeout = 50
-        target_pos, current_pos = self.forwarder.apply_action(action)
-        target_pos = np.array(target_pos)
-
-        print('Target pos:', target_pos - current_pos)
-        #print('Current pos:', current_pos)
-
-        while(abs(avg_delta) > .25):
-            
-            jnt_pos_now = []
-            np_jnt_target_pos =np.zeros(len(driven_joints))
-            jnt_states  = p.getJointStates(forwarderId, driven_joints)
-
-            
-            for jnt in jnt_states:
-                jnt_pos_now.append(jnt[0])
-            
-            np_jnt_pos_now = np.array(jnt_pos_now)
-            delta = np_jnt_pos_now - action 
-            
-            avg_delta = np.average(delta)
-            p.stepSimulation()
-            i += 1
-
-            if self.check_collision_results():
-                #done = True
-                reward = -1
-                break
-            
-            if ((avg_delta <= .1) and (i > self.delta_high)):
-                self.delta_high = i
-            
-            if (i>timeout):
-                break 
-
-            self.check_grasp()
-        '''
         self.img = self.forwarder.camera.getCameraImage()
         obs = self.forwarder.get_observation()
         obs = self.get_depth_img().flatten()
@@ -213,8 +158,8 @@ class ForwarderPick(gym.Env):
 
         self.img = self.forwarder.camera.getCameraImage()
         #obs = self.forwarder.get_observation()
-        obs = self.get_depth_img().flatten()
-
+        #obs = self.get_depth_img().flatten()
+        obs = self.get_segmentation_mask().flatten()
         #obs = self.forwarder.get_observation()
         return obs
     
@@ -245,7 +190,7 @@ class ForwarderPick(gym.Env):
 
     def get_depth_img(self):
         
-        depth_buffer = np.reshape(self.img[3], [self.forwarder.camera.img_width, self.forwarder.camera.img_height])
+        depth_buffer = np.reshape(self.img[3], [self.vis_obs_width, self.vis_obs_height])
         
         far = self.forwarder.camera.far
         near = self.forwarder.camera.near
@@ -253,6 +198,13 @@ class ForwarderPick(gym.Env):
         depth_img = depth_buffer
 
         return depth_img
+
+    def get_segmentation_mask(self):
+        if(self.img != None):
+            return np.reshape(self.img[4], [self.vis_obs_width, self.vis_obs_height])
+        else:
+            return np.zeros([self.vis_obs_width, self.vis_obs_height])
+
 
     def getLookAtPoint(self, forwarderId, parentLinkId, linkId):
 
@@ -341,8 +293,8 @@ from time import sleep
 
 fwd = ForwarderPick()
 
-fwd.forwarder.camera.img_height = 480
-fwd.forwarder.camera.img_width = 320
+fwd.forwarder.camera.img_height = 60
+fwd.forwarder.camera.img_width = 60
 
 action = fwd.action_space.sample()
 fwd.step(action)
