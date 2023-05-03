@@ -11,7 +11,8 @@ from stable_baselines3.common.monitor import Monitor
 import os
 from video_callback import VideoCallback
 
-save_dir = 'models/PPO'
+current_file_dir = os.path.dirname(os.path.abspath(__file__))
+save_dir = 'models'
 log_dir = 'logs'
 
 if(os.name != 'posix'):
@@ -49,7 +50,6 @@ if __name__ == '__main__':
     env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
     #env = gym.make(env_id)
     env = VecNormalize(env, norm_obs=True, norm_reward=False)
-    current_file_dir = os.path.dirname(os.path.abspath(__file__))
     eval_callback = EvalCallback(env ,
                                 best_model_save_path='models',
                                 log_path=log_dir,
