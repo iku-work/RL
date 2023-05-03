@@ -69,9 +69,9 @@ if __name__ == '__main__':
 
     #env.env_method('set_frame_skip', fs)
     model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir)
-    model.learn(total_timesteps=350000, 
+    model.learn(total_timesteps=6500, 
                 tb_log_name='ppo_{}'.format(env_name), 
-                callback=[eval_callback, customCallback]
+                #callback=[eval_callback, customCallback]
                 )
     model.save(save_dir + 'control_{}'.format(env_name))
     
