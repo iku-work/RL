@@ -5,15 +5,40 @@ from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 import gym 
+from stable_baselines3.common.vec_env import SubprocVecEnv, VecNormalize
+from stable_baselines3.common.utils import set_random_seed
+from stable_baselines3.common.monitor import Monitor
+
+def make_env(env_id, rank, seed=0):
+    """
+    Utility function for multiprocessed env.
+
+    :param env_id: (str) the environment ID
+    :param num_env: (int) the number of environments you wish to have in subprocesses
+    :param seed: (int) the inital seed for RNG
+    :param rank: (int) index of the subprocess
+    """
+    def _init():
+        env = gym.make(env_id)
+        env.seed(seed + rank)
+        env = Monitor(env, filename=None)
+        return env
+    set_random_seed(seed)
+    return _init
 
 log_dir = 'logs'
+env_name = 'forwarder-v0'
+env_id = "heavy_pb:{}".format(env_name) 
+num_cpu = 2  # Number of processes to use
+# Create the vectorized environment
+
 
 def objective(trial):
     n_steps = trial.suggest_int("n_steps", 128, 2048)
     n_epochs = trial.suggest_int("n_epochs", 1, 10)
     learning_rate = trial.suggest_loguniform("learning_rate", 1e-5, 1e-2)
     
-    env = DummyVecEnv([lambda: gym.make("CartPole-v1")])
+
     model = PPO("MlpPolicy", env, n_steps=n_steps, n_epochs=n_epochs, learning_rate=learning_rate, verbose=0, tensorboard_log=log_dir)
     model.learn(total_timesteps=100000, callback=CheckpointCallback(save_freq=1000, save_path="checkpoints/"))
     
@@ -21,8 +46,13 @@ def objective(trial):
 
     return mean_reward
 
-study = optuna.create_study(direction="maximize")
-study.optimize(objective, n_trials=2)
+if __name__ == '__main__':
+
+    env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
+    env = VecNormalize(env, norm_obs=True, norm_reward=False)
+
+    study = optuna.create_study(direction="maximize")
+    study.optimize(objective, n_trials=20)
 
 #with tf.summary.create_file_writer("logs/").as_default():
 #    optuna.integration.tensorboard.summary(study) #summary_target(study)
