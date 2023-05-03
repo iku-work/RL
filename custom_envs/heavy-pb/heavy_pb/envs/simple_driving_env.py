@@ -3,8 +3,8 @@ import numpy as np
 import math
 import pybullet as p
 from heavy_pb.resources.bobcat.bobcat import Bobcat
-from heavy_pb.resources.plane import Plane
-from heavy_pb.resources.goal import Goal
+from heavy_pb.resources.bobcat.plane import Plane
+from heavy_pb.resources.bobcat.goal import Goal
 import matplotlib.pyplot as plt
 import math 
 import time
@@ -14,7 +14,6 @@ class SimpleDrivingEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self):
-
 
         self.action_space = gym.spaces.box.Box(
             low=np.array([0, 0], dtype=np.float32),
@@ -238,9 +237,6 @@ class SimpleDrivingEnv(gym.Env):
                                 view_matrix,
                                 projection_matrix, shadow=True,
                                 renderer=p.ER_BULLET_HARDWARE_OPENGL)
-
-
-
 
 
     def close(self):

@@ -1,1 +1,6 @@
 /.DS_Store
+logs
+models
+checkpoints
+__pycache__
+heavy_pb.egg-info

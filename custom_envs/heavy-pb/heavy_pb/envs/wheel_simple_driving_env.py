@@ -3,8 +3,8 @@ import numpy as np
 import math
 import pybullet as p
 from heavy_pb.resources.wheelloader.wheel import Bobcat
-from heavy_pb.resources.plane import Plane
-from heavy_pb.resources.goal import Goal
+from heavy_pb.resources.bobcat.plane import Plane
+from heavy_pb.resources.bobcat.goal import Goal
 import matplotlib.pyplot as plt
 import math 
 import time
