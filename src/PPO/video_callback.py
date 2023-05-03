@@ -2,6 +2,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 import imageio 
 import os 
 import gym
+import numpy as np
 
 class VideoCallback(BaseCallback):
 
