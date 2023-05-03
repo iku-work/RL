@@ -11,17 +11,17 @@ class ForwarderPick(gym.Env):
     def __init__(self):
         super().__init__()
 
-        self.action_scale = np.array([.1, .1, .1, .1, .1, .1])
+        self.action_scale = np.array([.2, .2, .2, .1, .1, .5])
 
         self.action_low = -1
         self.action_max = 1
-        self.action_low_arr = np.full((6,), self.action_low, dtype = np.int32) #* self.action_scale
-        self.action_high_arr = np.full((6,), self.action_max, dtype = np.int32)  #* self.action_scale
+        self.action_low_arr = np.full((6,), self.action_low, dtype = np.float32) #* self.action_scale
+        self.action_high_arr = np.full((6,), self.action_max, dtype = np.float32)  #* self.action_scale
 
         self.action_space = gym.spaces.Box(
             low=self.action_low_arr,
             high= self.action_high_arr,
-            dtype = np.int32
+            dtype = np.float32
         )
 
 
@@ -31,7 +31,7 @@ class ForwarderPick(gym.Env):
         )
 
         self.update_freq =  120
-        self.frameskip = 240
+        self.frameskip = 80
 
         # Start the simulation
         self.client = p.connect(p.DIRECT)# p.GUI)# 
