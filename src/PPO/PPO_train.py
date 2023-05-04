@@ -11,6 +11,9 @@ from stable_baselines3.common.monitor import Monitor
 import os
 from video_callback import VideoCallback
 
+import torch
+print(torch.cuda.is_available())
+
 current_file_dir = os.path.dirname(os.path.abspath(__file__))
 save_dir = 'models'
 log_dir = 'logs'
@@ -68,9 +71,9 @@ if __name__ == '__main__':
                                     )
 
     #env.env_method('set_frame_skip', fs)
-    model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir)
-    model.learn(total_timesteps=6500, 
-                tb_log_name='ppo_{}'.format(env_name), 
+    model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir, device='cpu')
+    model.learn(total_timesteps=50000, 
+                tb_log_name='ppo_{}'.format(env_name)
                 #callback=[eval_callback, customCallback]
                 )
     model.save(save_dir + 'control_{}'.format(env_name))

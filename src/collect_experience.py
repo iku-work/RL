@@ -1,10 +1,11 @@
 import gym
 import pybullet as p
 import pandas as pd
+import pygame
 
 
-
-'''def get_action():
+'''
+def get_action():
    armBase_control = p.readUserDebugParameter(armBase)
    craneArm_control = p.readUserDebugParameter(craneArm)
    extensionArm_control = p.readUserDebugParameter(extensionArm)
@@ -27,8 +28,6 @@ def read_debug_params():
            'exit': exit_ctrl
            }
 
-
-
 armBase = p.addUserDebugParameter('ArmBase', -1, 1, 0)
 craneArm = p.addUserDebugParameter('CraneArm', -1, 1, 0)
 extensionArm = p.addUserDebugParameter('ExtensionArm', -1, 1, 0)
@@ -40,19 +39,54 @@ start_button =  p.addUserDebugParameter('Start episode', 1, 0, 0)
 stop_button =  p.addUserDebugParameter('Stop and save', 1, 0, 0)
 continue_button = p.addUserDebugParameter('Continue', 1, 0, 0)
 discard_button = p.addUserDebugParameter('Discard', 1, 0, 0)
-exit_button = p.addUserDebugParameter('Exit', 1, 0, 0)'''
+exit_button = p.addUserDebugParameter('Exit', 1, 0, 0)
+'''
+
+pygame.init()
+# Initialize the joysticks.
+pygame.joystick.init()
+#joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
+joystick = pygame.joystick.Joystick(0)
+
 
 env_name = 'forwarder-v0'
 env_id = 'heavy_pb:{}'.format(env_name)
-env = gym.make(env_id, mode='DIRECT', increment=True, wait=True)
+env = gym.make(env_id, mode='DIRECT', increment=False, wait=True)
 obs = env.reset()
 
-while (True):
+df = pd.DataFrame()
+trajectories = {'act':[], 'rew':[], 'obs':[], 'dones':[]}
+i = 0
+for i in range(20000):
+
+   pygame.event.get()
+
+   axes_vals = list()
+
+   #for joystick in joysticks:
+   axes = joystick.get_numaxes()
+      #print(axes)
+   for i in range(axes):
+      val = joystick.get_axis(i)
+      axes_vals.append(val)
+   
+   # A,B,X,Y,
+   # 0,1,2,3
+   buttons = list()
+   for i in range(joystick.get_numbuttons()):
+      button = joystick.get_button(i)
+      buttons.append(button)
 
    # record actions at each timestep
-   action = env.action_space.sample()
+   #action = env.action_space.sample()
+   #action = get_action()
    # record reward, observations, dones in each timestep
-   rew, obs, done, info = env.step(action) 
+   
+   rew, obs, done, info = env.step(axes_vals) 
+   trajectories['act'].append(axes_vals)
+   trajectories['rew'].append(rew)
+   trajectories['obs'].append(obs)
+   trajectories['dones'].append(done)
    env.render()
 
    #debug_ctrl = read_debug_params()
@@ -60,7 +94,9 @@ while (True):
    #if(debug_ctrl['exit'] == True):   
    #   break
 
-env.close()
+df = pd.DataFrame(trajectories)
+print(df.head)
+#env.close()
    # 
 
 #action = 
