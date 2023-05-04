@@ -8,11 +8,25 @@ from time import sleep
 
 class ForwarderPick(gym.Env):
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         super().__init__()
 
+        # Run in DIRECT mode by default, can be called with GUI
+        self.mode = 'DIRECT'
+        if('mode' in kwargs):
+            self.set_mode(kwargs['mode'])
+        else:
+            self.set_mode(self.mode)
+        
+        self.increment = True
+        if ('increment' in kwargs):
+            self.increment = kwargs['increment']
+        
+        self.wait = True
+        if('wait' in kwargs):
+            self.wait = kwargs['wait']
+    
         self.action_scale = np.array([.2, .2, .2, .1, .1, .5])
-
         self.action_low = -1
         self.action_max = 1
         self.action_low_arr = np.full((6,), self.action_low, dtype = np.float32) #* self.action_scale
@@ -34,7 +48,7 @@ class ForwarderPick(gym.Env):
         self.frameskip = 80
 
         # Start the simulation
-        self.client = p.connect(p.DIRECT)# p.GUI)# 
+        #self.client = p.connect(p.DIRECT)# p.GUI)# 
         p.setAdditionalSearchPath(pybullet_data.getDataPath()) #optionally
         p.setGravity(0,0,-10)
         p.resetDebugVisualizerCamera(cameraDistance=4, cameraYaw=70, cameraPitch=-22, cameraTargetPosition=[3,0,2])
@@ -115,15 +129,19 @@ class ForwarderPick(gym.Env):
         done = False
         info = {}
 
-        action = self.forwarder.incrementJointPosByAction(action, self.action_scale)
-        #action = self.forwarder.scaleToJntsLimits(action)
-        #self.forwarder.apply_action(action)
-        
-        #for _ in  range(self.frameskip):
-        #    self.forwarder.apply_action(action)
-        #    p.stepSimulation()
+        if(self.increment):
+            action = self.forwarder.incrementJointPosByAction(action, self.action_scale)
+        else:
+            action = self.forwarder.scaleToJntsLimits(action)
+            self.forwarder.apply_action(action)
 
-        self.actWithWait(action)
+        if(self.wait):
+            self.actWithWait(action)
+        else:
+
+            p.stepSimulation()
+            #self.forwarder.apply_action(action)
+
         reward += self.massSensor.getMass()
 
         if (self.check_grasp()):
@@ -286,6 +304,14 @@ class ForwarderPick(gym.Env):
     
     def set_frame_skip(self, frameskip):
         self.frameskip = frameskip
+
+    def set_mode(self, mode):
+        mode = mode.upper()
+        if(mode == 'DIRECT'):
+                self.client = p.connect(p.DIRECT)
+        elif(mode =='GUI'):
+                self.client = p.connect(p.GUI)
+
 
 
 '''
