@@ -2,6 +2,10 @@ import gym
 import pybullet as p
 import pandas as pd
 import pygame
+import os
+
+if(os.name != 'posix'):
+    os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 
 '''
