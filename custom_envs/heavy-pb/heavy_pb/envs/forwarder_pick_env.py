@@ -45,8 +45,10 @@ class ForwarderPick(gym.Env):
         obs_len = self.vis_obs_width * self.vis_obs_height
 
         self.observation_space = gym.spaces.Box(
-            low=np.full((obs_len,), -np.inf, dtype = np.float32),
-            high=np.full((obs_len,), np.inf, dtype = np.float32),
+            #low=np.full((obs_len,), -np.inf, dtype = np.float32),
+            #high=np.full((obs_len,), np.inf, dtype = np.float32),
+            low=np.full((117,), -np.inf, dtype = np.float32),
+            high=np.full((117,), np.inf, dtype = np.float32),
         )
 
         self.update_freq =  120
@@ -155,7 +157,7 @@ class ForwarderPick(gym.Env):
             done = True
 
         self.img = self.forwarder.camera.getCameraImage()
-        obs = self.forwarder.get_observation()
+        #obs = self.forwarder.get_observation()
         obs = self.get_depth_img().flatten()
         #obs = self.get_segmentation_mask().flatten()
         return obs, reward, done, info
@@ -179,7 +181,7 @@ class ForwarderPick(gym.Env):
 
         self.img = self.forwarder.camera.getCameraImage()
         obs = self.get_depth_img().flatten()
-        #obs = self.get_segmentation_mask()#.flatten()
+        #obs = self.get_segmentation_mask().flatten()
         #obs = self.forwarder.get_observation()
         return obs
     

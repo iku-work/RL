@@ -21,8 +21,8 @@ class CameraSensor():
         self.near = 0.02
         self.far = 30
         
-        self.img_width = 480
-        self.img_height = 480
+        self.img_width = 128
+        self.img_height = 128
         self.fov = 90
         self.aspect_ratio = 1
         

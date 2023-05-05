@@ -8,6 +8,7 @@ import gym
 from stable_baselines3.common.vec_env import SubprocVecEnv, VecNormalize
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.monitor import Monitor
+from video_callback import VideoCallback
 
 def make_env(env_id, rank, seed=0):
     """
@@ -29,7 +30,7 @@ def make_env(env_id, rank, seed=0):
 log_dir = 'logs'
 env_name = 'forwarder-v0'
 env_id = "heavy_pb:{}".format(env_name) 
-num_cpu = 2  # Number of processes to use
+num_cpu = 3  # Number of processes to use
 # Create the vectorized environment
 
 
@@ -40,7 +41,13 @@ def objective(trial):
     
 
     model = PPO("MlpPolicy", env, n_steps=n_steps, n_epochs=n_epochs, learning_rate=learning_rate, verbose=0, tensorboard_log=log_dir)
-    model.learn(total_timesteps=100000, callback=CheckpointCallback(save_freq=1000, save_path="checkpoints/"))
+    video_folder = "logs/videos/{}/".format(env_name) 
+    customCallback = VideoCallback(video_folder=video_folder, 
+                                    env_id=env_id, 
+                                    gif_name='{}'.format(env_name),
+                                    rec_freq=2000
+                                    )
+    model.learn(total_timesteps=6000, callback=customCallback)
     
     mean_reward, _ = evaluate_policy(model, env, 5, False, False, None, None, False,False)
 
