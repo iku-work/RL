@@ -5,6 +5,7 @@ import numpy as np
 import pybullet_data
 import matplotlib.pyplot as plt
 from time import sleep
+import cv2
 
 class ForwarderPick(gym.Env):
 
@@ -26,6 +27,9 @@ class ForwarderPick(gym.Env):
         if('wait' in kwargs):
             self.wait = kwargs['wait']
     
+        self.vis_obs_width = 60
+        self.vis_obs_height = 60
+
         self.action_scale = np.array([.2, .2, .2, .1, .1, .5])
         self.action_low = -1
         self.action_max = 1
@@ -38,10 +42,11 @@ class ForwarderPick(gym.Env):
             dtype = np.float32
         )
 
+        obs_len = self.vis_obs_width * self.vis_obs_height
 
         self.observation_space = gym.spaces.Box(
-            low=np.full((3600,), -np.inf, dtype = np.float32),
-            high=np.full((3600,), np.inf, dtype = np.float32),
+            low=np.full((obs_len,), -np.inf, dtype = np.float32),
+            high=np.full((obs_len,), np.inf, dtype = np.float32),
         )
 
         self.update_freq =  120
@@ -87,8 +92,6 @@ class ForwarderPick(gym.Env):
         p.enableJointForceTorqueSensor(self.forwarderId, 6)
         p.enableJointForceTorqueSensor(self.forwarderId, 7)
 
-        self.vis_obs_width = 60
-        self.vis_obs_height = 60
 
         # Set timestep
         #p.setTimeStep(1/self.update_freq, self.client)
@@ -154,7 +157,7 @@ class ForwarderPick(gym.Env):
         self.img = self.forwarder.camera.getCameraImage()
         obs = self.forwarder.get_observation()
         obs = self.get_depth_img().flatten()
-        obs = self.observation_space.sample()
+        #obs = self.get_segmentation_mask().flatten()
         return obs, reward, done, info
 
     def reset(self):
@@ -175,9 +178,8 @@ class ForwarderPick(gym.Env):
         #p.enableJointForceTorqueSensor(self.forwarderId, 7)
 
         self.img = self.forwarder.camera.getCameraImage()
-        #obs = self.forwarder.get_observation()
-        #obs = self.get_depth_img().flatten()
-        obs = self.get_segmentation_mask().flatten()
+        obs = self.get_depth_img().flatten()
+        #obs = self.get_segmentation_mask()#.flatten()
         #obs = self.forwarder.get_observation()
         return obs
     
@@ -208,18 +210,24 @@ class ForwarderPick(gym.Env):
 
     def get_depth_img(self):
         
-        depth_buffer = np.reshape(self.img[3], [self.vis_obs_width, self.vis_obs_height])
-        
-        far = self.forwarder.camera.far
-        near = self.forwarder.camera.near
-        depth_buffer = far * near / (far - (far - near) * depth_buffer)
-        depth_img = depth_buffer
-
+        if(self.img != None):
+            depth_buffer = self.img[3].copy()
+            depth_buffer = cv2.resize(depth_buffer, (self.vis_obs_width, self.vis_obs_height), interpolation= cv2.INTER_LINEAR)
+            far = self.forwarder.camera.far
+            near = self.forwarder.camera.near
+            depth_buffer = far * near / (far - (far - near) * depth_buffer)
+            depth_img = depth_buffer
+        else:
+            return np.zeros([self.vis_obs_width, self.vis_obs_height])
         return depth_img
 
     def get_segmentation_mask(self):
+        
         if(self.img != None):
-            return np.reshape(self.img[4], [self.vis_obs_width, self.vis_obs_height])
+            #return np.reshape(self.img[4], [self.vis_obs_width, self.vis_obs_height])
+            seg_mask = self.img[4].copy().astype('float32')
+            seg_mask = cv2.resize(seg_mask, (self.vis_obs_width, self.vis_obs_height), interpolation= cv2.INTER_LINEAR)
+            return self.img[4].copy().resize((self.vis_obs_width, self.vis_obs_height))
         else:
             return np.zeros([self.vis_obs_width, self.vis_obs_height])
 
@@ -319,11 +327,8 @@ from time import sleep
 
 fwd = ForwarderPick()
 
-fwd.forwarder.camera.img_height = 60
-fwd.forwarder.camera.img_width = 60
-
 action = fwd.action_space.sample()
-fwd.step(action)
+fwd.reset()
 
 delta_high = 0
 
