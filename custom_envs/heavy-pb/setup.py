@@ -7,5 +7,7 @@ setup(
                       'pybullet',
                       'numpy',
                       'matplotlib',
-                      'torch']
+                      'torch',
+                      'opencv-python'
+                      ]
 )

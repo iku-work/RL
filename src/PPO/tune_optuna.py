@@ -34,9 +34,9 @@ num_cpu = 2  # Number of processes to use
 
 
 def objective(trial):
-    n_steps = trial.suggest_int("n_steps", 128, 2048)
+    n_steps = trial.suggest_int("n_steps", 128, 2048, 128)
     n_epochs = trial.suggest_int("n_epochs", 1, 10)
-    learning_rate = trial.suggest_loguniform("learning_rate", 1e-5, 1e-2)
+    learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-2)
     
 
     model = PPO("MlpPolicy", env, n_steps=n_steps, n_epochs=n_epochs, learning_rate=learning_rate, verbose=0, tensorboard_log=log_dir)
