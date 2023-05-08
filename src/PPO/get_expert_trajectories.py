@@ -8,7 +8,7 @@ from stable_baselines3.common.evaluation import evaluate_policy
 
 import gym
 import numpy as np
-
+import pandas as pd
 from torch.utils.data.dataset import Dataset, random_split
 
 class ExpertDataSet(Dataset):
@@ -48,8 +48,11 @@ def pretrain_agent(
 
     def train(model, device, train_loader, optimizer):
         model.train()
-
+        
         for batch_idx, (data, target) in enumerate(train_loader):
+            #print('Target:', type(target), target)
+            #if(type(target) == list):
+            #    target = th.as_tensor(target)
             data, target = data.to(device), target.to(device)
             optimizer.zero_grad()
 
@@ -142,13 +145,14 @@ env_id = "heavy_pb:{}".format(env_name)
 #env_id = "CartPole-v1"
 env = gym.make(env_id)
 
+'''
 ppo_expert =  PPO("MlpPolicy", env, verbose=1)#, tensorboard_log=log_dir, device='cpu')
 ppo_expert.learn(total_timesteps=4000)
 ppo_expert.save("ppo_expert")
 
 mean_reward, std_reward = evaluate_policy(ppo_expert, env, n_eval_episodes=2)
 print(f"Mean reward = {mean_reward} +/- {std_reward}")
-
+'''
 
 a2c_student = A2C("MlpPolicy", env, verbose=1)
 num_interactions = int(4000)
@@ -162,6 +166,7 @@ else:
     expert_observations = np.empty((num_interactions,) + env.observation_space.shape)
     expert_actions = np.empty((num_interactions,) + env.action_space.shape)
 
+'''
 obs = env.reset()
 
 for i in range(num_interactions):
@@ -178,7 +183,28 @@ np.savez_compressed(
     expert_actions=expert_actions,
     expert_observations=expert_observations,
 )
+'''
+data = pd.read_pickle('data\expert_data_09_05_2023_00_02.pkl')
+print(len(data))
+for i in range(len(data)):
+    expert_observations[i] = data['obs'].values[i]
+    expert_actions[i] = data['act'].values[i]
 
+print('expert obs type - ', type(expert_observations))
+# (4000, 6)
+print(expert_actions.shape)
+# (4000, 3600)
+print(expert_observations.shape)
+
+'''
+
+#data = np.load('data\expert_data08_05_2023_23_42.npz', allow_pickle=True)
+
+data = pd.read_pickle('data\expert_data_09_05_2023_00_02.pkl')
+
+expert_observations = data['obs'].values
+expert_actions = data['act'].values
+print(type(expert_actions), type(expert_observations))'''
 expert_dataset = ExpertDataSet(expert_observations, expert_actions)
 
 train_size = int(0.8 * len(expert_dataset))
@@ -193,9 +219,8 @@ print("test_expert_dataset: ", len(test_expert_dataset))
 print("train_expert_dataset: ", len(train_expert_dataset))
 
 
-mean_reward, std_reward = evaluate_policy(a2c_student, env, n_eval_episodes=10)
-
-print(f"Mean reward = {mean_reward} +/- {std_reward}")
+#mean_reward, std_reward = evaluate_policy(a2c_student, env, n_eval_episodes=2)
+#print(f"Mean reward = {mean_reward} +/- {std_reward}")
 
 pretrain_agent(
     a2c_student,
@@ -210,6 +235,6 @@ pretrain_agent(
 )
 a2c_student.save("a2c_student")
 
-mean_reward, std_reward = evaluate_policy(a2c_student, env, n_eval_episodes=2)
+mean_reward, std_reward = evaluate_policy(a2c_student, env, n_eval_episodes=2)#, render=True)
 
 print(f"Mean reward = {mean_reward} +/- {std_reward}")

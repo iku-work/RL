@@ -51,7 +51,7 @@ class ForwarderPick(gym.Env):
             #high=np.full((117,), np.inf, dtype = np.float32),
         )
 
-        self.update_freq =  120
+        self.update_freq =  160
         self.frameskip = 30
 
         # Start the simulation

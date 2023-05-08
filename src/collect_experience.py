@@ -14,7 +14,7 @@ if(os.name != 'posix'):
 
 env_name = 'forwarder-v0'
 env_id = 'heavy_pb:{}'.format(env_name)
-env = gym.make(env_id, mode='DIRECT', increment=False, wait=True)
+env = gym.make(env_id, mode='DIRECT', increment=True, wait=True)
 obs = env.reset()
 
 pygame.init()
@@ -83,6 +83,8 @@ np.savez_compressed(
     expert_actions=df['act'].values,
     expert_observations=df['obs'].values,
 )
+
+pd.to_pickle(df, 'data/expert_data_{}.pkl'.format(dt_string))
 
 env.close()
    # 
