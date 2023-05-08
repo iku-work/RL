@@ -52,7 +52,7 @@ class ForwarderPick(gym.Env):
         )
 
         self.update_freq =  120
-        self.frameskip = 80
+        self.frameskip = 30
 
         # Start the simulation
         #self.client = p.connect(p.DIRECT)# p.GUI)# 
@@ -203,7 +203,7 @@ class ForwarderPick(gym.Env):
         #depth_buffer = self.get_depth_img()
         #self.rendered_img.set_data(depth_buffer)
         self.rendered_img.set_data(self.img[2])
-        self.rendered_img.set_data(self.get_depth_img())
+        #self.rendered_img.set_data(self.get_depth_img())
         plt.draw()
         plt.pause(.00001)
         

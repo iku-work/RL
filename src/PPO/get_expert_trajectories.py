@@ -173,11 +173,6 @@ for i in range(num_interactions):
     if done:
         obs = env.reset()
 
-print('Expert actions shape: ',expert_actions.shape)
-print('Expert obs shape: ', expert_observations.shape)
-print(expert_actions[0:10])
-print(expert_observations[0:10])
-
 np.savez_compressed(
     "expert_data",
     expert_actions=expert_actions,

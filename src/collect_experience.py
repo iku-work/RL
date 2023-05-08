@@ -5,10 +5,17 @@ import pandas as pd
 import os
 import numpy as np
 import pandas as pd
-'''
+import pygame
+
+from datetime import datetime
+
 if(os.name != 'posix'):
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
+env_name = 'forwarder-v0'
+env_id = 'heavy_pb:{}'.format(env_name)
+env = gym.make(env_id, mode='DIRECT', increment=False, wait=True)
+obs = env.reset()
 
 pygame.init()
 # Initialize the joysticks.
@@ -16,11 +23,7 @@ pygame.joystick.init()
 #joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
 joystick = pygame.joystick.Joystick(0)
 
-
-env_name = 'forwarder-v0'
-env_id = 'heavy_pb:{}'.format(env_name)
-env = gym.make(env_id, mode='DIRECT', increment=False, wait=True)
-obs = env.reset()
+invert_control = np.array([-1,1,1,1,1,1])
 
 df = pd.DataFrame()
 trajectories = {'act':[], 'rew':[], 'obs':[], 'dones':[]}
@@ -28,7 +31,6 @@ i = 0
 for i in range(20000):
 
    pygame.event.get()
-
    axes_vals = list()
 
    #for joystick in joysticks:
@@ -38,19 +40,17 @@ for i in range(20000):
       val = joystick.get_axis(i)
       axes_vals.append(val)
    
+   action = np.asarray(axes_vals, dtype=np.float32)
+
    # A,B,X,Y,
    # 0,1,2,3
    buttons = list()
    for i in range(joystick.get_numbuttons()):
       button = joystick.get_button(i)
       buttons.append(button)
-
-   # record actions at each timestep
-   #action = env.action_space.sample()
-   #action = get_action()
-   # record reward, observations, dones in each timestep
    
-   rew, obs, done, info = env.step(axes_vals) 
+   action = action * invert_control
+   obs, rew, done, info = env.step(action) 
    trajectories['act'].append(axes_vals)
    trajectories['rew'].append(rew)
    trajectories['obs'].append(obs)
@@ -58,16 +58,36 @@ for i in range(20000):
    env.render()
 
    #debug_ctrl = read_debug_params()
-
-   #if(debug_ctrl['exit'] == True):   
-   #   break
-
+   # Y
+   if(buttons[3] == True):   
+      break
+   # B
+   if(buttons[2] == True):
+      obs = env.reset()
+   # A
+   if (buttons[1]):
+      
+      pass
 df = pd.DataFrame(trajectories)
-print(df.head)
-#env.close()
-   # 
 
-#action = '''
+# datetime object containing current date and time
+now = datetime.now()
+
+# dd/mm/YY H:M:S
+dt_string = now.strftime("%d_%m_%Y_%H_%M")
+
+print(df['obs'].values)
+
+np.savez_compressed(
+    "data/expert_data{}".format(dt_string),
+    expert_actions=df['act'].values,
+    expert_observations=df['obs'].values,
+)
+
+env.close()
+   # 
+'''
+#action = 
 
 env_name = 'forwarder-v0'
 env_id = 'heavy_pb:{}'.format(env_name)
@@ -88,14 +108,23 @@ else:
 
 obs = env.reset()
 for i in range(n_steps):
-    print(i)
-    action = env.action_space.sample()
-    expert_observations[i] = obs
-    expert_actions[i] = action
-    obs, reward, done, info = env.step(action)
-    #done = terminated or truncated
-    if done:
-        obs = env.reset()
+   print(i)
+   #action = env.action_space.sample()
+   axes_vals = []
+   axes = joystick.get_numaxes()
+      #print(axes)
+   for i in range(axes):
+      val = joystick.get_axis(i)
+      axes_vals.append(val)
+   print(axes_vals)
+   action = axes_vals
+   expert_observations[i] = obs
+   expert_actions[i] = action
+   obs, reward, done, info = env.step(action)
+   env.render()
+   #done = terminated or truncated
+   if done:
+      obs = env.reset()
 
 
 # record each time a file
@@ -111,3 +140,4 @@ np.savez_compressed(
     expert_actions=expert_actions,
     expert_observations=expert_observations,
 )
+'''
