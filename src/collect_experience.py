@@ -74,7 +74,7 @@ env_id = 'heavy_pb:{}'.format(env_name)
 env = gym.make(env_id, mode='DIRECT', increment=False, wait=True)
 obs = env.reset()
 
-n_steps = 4000
+n_steps = 1000
 
 if isinstance(env.action_space, gym.spaces.Box):
     expert_observations = np.empty((n_steps,) + env.observation_space.shape)
@@ -88,7 +88,8 @@ else:
 
 obs = env.reset()
 for i in range(n_steps):
-    action, _ = env.action_space.sample()
+    print(i)
+    action = env.action_space.sample()
     expert_observations[i] = obs
     expert_actions[i] = action
     obs, reward, done, info = env.step(action)
@@ -96,10 +97,17 @@ for i in range(n_steps):
     if done:
         obs = env.reset()
 
-df = pd.DataFrame()
+
+# record each time a file
+# dicard if not okay
+# save if okay
+# merge later 
+
+#df = pd.DataFrame({'action': expert_actions, 'observations': expert_observations})
+#df.to_pickle('models/expert_data.pkl')
 
 np.savez_compressed(
-    "expert_data",
+    "models/expert_data",
     expert_actions=expert_actions,
     expert_observations=expert_observations,
 )

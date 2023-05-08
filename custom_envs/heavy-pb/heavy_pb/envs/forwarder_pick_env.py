@@ -105,8 +105,9 @@ class ForwarderPick(gym.Env):
         #self.forwarder.apply_action(action)
         avg_delta = 1
         i = 0
-        self.forwarder.apply_action(action)
+        
         for _ in range(self.frameskip):
+            self.forwarder.apply_action(action)
             p.stepSimulation()
             
             #if(i % 10):
@@ -256,11 +257,11 @@ class ForwarderPick(gym.Env):
     def check_grasp(self): 
 
         look_at_pos = self.getLookAtPoint(self.forwarderId, 5, 6)
-        parentLink_pos, parentLink_ori, _,_,_,_ = p.getLinkState(self.forwarderId, 6)
+        parentLink_pos, _, _,_,_,_ = p.getLinkState(self.forwarderId, 6)
         parentLink_pos = np.array(parentLink_pos)
 
         result = p.rayTest(parentLink_pos, look_at_pos)[0]
-        hit_pos = np.array(result[3])
+        hit_pos = np.asarray(result[3])
         hit_dist = np.linalg.norm(hit_pos - parentLink_pos)
 
         # Check if grapples are closed
