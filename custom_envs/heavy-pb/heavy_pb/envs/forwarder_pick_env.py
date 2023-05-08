@@ -45,10 +45,10 @@ class ForwarderPick(gym.Env):
         obs_len = self.vis_obs_width * self.vis_obs_height
 
         self.observation_space = gym.spaces.Box(
-            #low=np.full((obs_len,), -np.inf, dtype = np.float32),
-            #high=np.full((obs_len,), np.inf, dtype = np.float32),
-            low=np.full((117,), -np.inf, dtype = np.float32),
-            high=np.full((117,), np.inf, dtype = np.float32),
+            low=np.full((obs_len,), -np.inf, dtype = np.float32),
+            high=np.full((obs_len,), np.inf, dtype = np.float32),
+            #low=np.full((117,), -np.inf, dtype = np.float32),
+            #high=np.full((117,), np.inf, dtype = np.float32),
         )
 
         self.update_freq =  120
@@ -100,16 +100,16 @@ class ForwarderPick(gym.Env):
         #self.
 
     def actWithWait(self, action):
-       # Frameskip with timeout?
+
         forwarderId = self.forwarder.forwarder
         #self.forwarder.apply_action(action)
         avg_delta = 1
         i = 0
-
+        self.forwarder.apply_action(action)
         for _ in range(self.frameskip):
-            self.forwarder.apply_action(action)
-
             p.stepSimulation()
+            
+            #if(i % 10):
             jnt_pos_now = []
             #np_jnt_target_pos =np.zeros(len(self.forwarder.active_joints))
             jnt_states  = p.getJointStates(forwarderId, self.forwarder.active_joints)
@@ -127,7 +127,6 @@ class ForwarderPick(gym.Env):
             if (np.abs(avg_delta) < .01):                
                 break
 
-
     def step(self, action):
         
         reward = 0
@@ -143,18 +142,18 @@ class ForwarderPick(gym.Env):
         if(self.wait):
             self.actWithWait(action)
         else:
-
+            self.forwarder.apply_action(action)
             p.stepSimulation()
-            #self.forwarder.apply_action(action)
+            
 
         reward += self.massSensor.getMass()
 
         if (self.check_grasp()):
-            reward += 0.1
+            reward += .1
 
         if (self.check_collision_results()):
-            reward = -1
-            done = True
+            reward = -.01
+            #done = True
 
         self.img = self.forwarder.camera.getCameraImage()
         #obs = self.forwarder.get_observation()
@@ -203,6 +202,7 @@ class ForwarderPick(gym.Env):
         #depth_buffer = self.get_depth_img()
         #self.rendered_img.set_data(depth_buffer)
         self.rendered_img.set_data(self.img[2])
+        self.rendered_img.set_data(self.get_depth_img())
         plt.draw()
         plt.pause(.00001)
         
@@ -300,17 +300,6 @@ class ForwarderPick(gym.Env):
             return True
         
         return False
-
-    def getNumLogs(self):
-        
-        overlappingObjs=p.getOverlappingObjects(self.aabb_min, self.aabb_max)
-
-        overlap = 0
-        for _,obj in enumerate(overlappingObjs):
-            if(obj[0] != self.forwarderId and obj[0] != self.plane):
-                overlap += 1
-
-        return overlap
     
     def set_frame_skip(self, frameskip):
         self.frameskip = frameskip
@@ -323,8 +312,7 @@ class ForwarderPick(gym.Env):
                 self.client = p.connect(p.GUI)
 
 
-
-'''
+''' 
 from time import sleep
 
 fwd = ForwarderPick()
@@ -338,7 +326,7 @@ for i in range(100000):
 
     action = fwd.action_space.sample()
     obs, rew, done, _ = fwd.step(action)
-    #print(np.max(obs), np.min(obs))
+    print(np.max(obs), np.min(obs))
     fwd.render()
 
     if (i % 200) == 0 or done:
@@ -348,4 +336,4 @@ for i in range(100000):
             delta_high = fwd.delta_high
             print("New high delta: ", delta_high)
 
-        fwd.reset()'''
+        fwd.reset() '''

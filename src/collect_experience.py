@@ -1,9 +1,11 @@
 import gym
 import pybullet as p
 import pandas as pd
-import pygame
+#import pygame
 import os
-
+import numpy as np
+import pandas as pd
+'''
 if(os.name != 'posix'):
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
@@ -65,4 +67,39 @@ print(df.head)
 #env.close()
    # 
 
-#action = 
+#action = '''
+
+env_name = 'forwarder-v0'
+env_id = 'heavy_pb:{}'.format(env_name)
+env = gym.make(env_id, mode='DIRECT', increment=False, wait=True)
+obs = env.reset()
+
+n_steps = 4000
+
+if isinstance(env.action_space, gym.spaces.Box):
+    expert_observations = np.empty((n_steps,) + env.observation_space.shape)
+    expert_actions = np.empty((n_steps,) + (env.action_space.shape[0],))
+    dones = np.empty((n_steps,))
+
+else:
+    expert_observations = np.empty((n_steps,) + env.observation_space.shape)
+    expert_actions = np.empty((n_steps,) + env.action_space.shape)
+    dones = np.empty((n_steps,))
+
+obs = env.reset()
+for i in range(n_steps):
+    action, _ = env.action_space.sample()
+    expert_observations[i] = obs
+    expert_actions[i] = action
+    obs, reward, done, info = env.step(action)
+    #done = terminated or truncated
+    if done:
+        obs = env.reset()
+
+df = pd.DataFrame()
+
+np.savez_compressed(
+    "expert_data",
+    expert_actions=expert_actions,
+    expert_observations=expert_observations,
+)

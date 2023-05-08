@@ -57,7 +57,11 @@ class VideoCallback(BaseCallback):
             os.makedirs(video_folder)
 
         env_name = env_id.split(':')[-1]
-        imageio.mimsave(video_folder + "/result_{}_{}.gif".format(gif_name, env_name), [np.array(img) for i, img in enumerate(images) if i%2 == 0], fps=29)
+        try:
+            imageio.mimsave(video_folder + "/result_{}_{}.gif".format(gif_name, env_name), [np.array(img) for i, img in enumerate(images) if i%2 == 0], fps=29)
+        except:
+            imageio.mimsave(video_folder + "/result_{}_{}.gif".format(gif_name, env_name), [np.array(img) for i, img in enumerate(images) if i%2 == 0], duration=29)
+
         env.close()
     
     def _on_step(self) -> bool:

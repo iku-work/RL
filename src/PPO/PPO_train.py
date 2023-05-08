@@ -11,8 +11,7 @@ from stable_baselines3.common.monitor import Monitor
 import os
 from video_callback import VideoCallback
 
-import torch
-print(torch.cuda.is_available())
+import time
 
 current_file_dir = os.path.dirname(os.path.abspath(__file__))
 save_dir = 'models'
@@ -61,7 +60,7 @@ if __name__ == '__main__':
                                 deterministic=True,
                                 render=False,
                                 callback_on_new_best=None)
-
+    
 
     video_folder = "logs/videos/{}/".format(env_name) 
     customCallback = VideoCallback(video_folder=video_folder, 
@@ -78,3 +77,24 @@ if __name__ == '__main__':
                 )
     model.save(save_dir + 'control_{}'.format(env_name))
     
+    '''
+    st = time.process_time()
+    env = gym.make(env_id)
+    env.reset()
+
+    for i in range(2000):
+        action = env.action_space.sample()
+        rew, obs, done, _ = env.step(action)
+        env.render()
+
+        print(i)
+
+        if(done):
+            env.reset()
+    # get the end time
+    et = time.process_time()
+
+    # get execution time
+    res = et - st
+    print('CPU Execution time:', res, 'seconds')
+    '''
