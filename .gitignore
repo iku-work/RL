@@ -5,4 +5,4 @@ checkpoints
 __pycache__
 heavy_pb.egg-info
 __pycache__/
-*.py[cod]
+*.pyc
