@@ -73,9 +73,9 @@ if __name__ == '__main__':
     model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir, device='cpu')
     model.learn(total_timesteps=50000, 
                 tb_log_name='ppo_{}'.format(env_name),
-                callback=[eval_callback, customCallback]
+                #callback=[eval_callback, customCallback]
                 )
-    model.save(save_dir + 'control_{}'.format(env_name))
+    model.save(save_dir + 'control_{}'.format(env_name))    
     
     '''
     st = time.process_time()

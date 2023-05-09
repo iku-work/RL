@@ -70,7 +70,7 @@ class ForwarderPick(gym.Env):
 
         self.initial_wood_pos = [3.5,0,0.5]
         self.initial_wood_rot = [1.54 ,0, 1.54]
-        self.layer_dim = 10
+        self.layer_dim = 1
         self.n_layers = 1
         self.wood_offset = .5
         self.woodPile = WoodPile(self.initial_wood_pos, 
@@ -157,6 +157,7 @@ class ForwarderPick(gym.Env):
             #done = True
 
         self.img = self.forwarder.camera.getCameraImage()
+        #print('Image type: ', type(self.img[2]))
         #obs = self.forwarder.get_observation()
         obs = self.get_depth_img().flatten()
         #obs = self.get_segmentation_mask().flatten()
