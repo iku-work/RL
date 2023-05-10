@@ -51,7 +51,7 @@ if __name__ == '__main__':
     # Create the vectorized environment
     env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
     #env = gym.make(env_id)
-    env = VecNormalize(env, norm_obs=True, norm_reward=False)
+    env = VecNormalize(env, norm_obs=True, norm_reward=True)
     eval_callback = EvalCallback(env ,
                                 best_model_save_path='models',
                                 log_path=log_dir,
@@ -69,25 +69,26 @@ if __name__ == '__main__':
                                     rec_freq=1e3
                                     )
 
+    
     #env.env_method('set_frame_skip', fs)
     model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=log_dir, device='cpu')
     model.learn(total_timesteps=50000, 
                 tb_log_name='ppo_{}'.format(env_name),
-                #callback=[eval_callback, customCallback]
+                callback=[eval_callback, customCallback]
                 )
     model.save(save_dir + 'control_{}'.format(env_name))    
     
     '''
     st = time.process_time()
-    env = gym.make(env_id)
-    env.reset()
+    env = gym.make(env_id, increment=True)
+    obs = env.reset()
 
     for i in range(2000):
-        action = env.action_space.sample()
-        rew, obs, done, _ = env.step(action)
+        action = model.predict(obs)
+        
+        obs, rew, done, _ = env.step(action[0])
+        print(rew)
         env.render()
-
-        print(i)
 
         if(done):
             env.reset()
@@ -96,5 +97,4 @@ if __name__ == '__main__':
 
     # get execution time
     res = et - st
-    print('CPU Execution time:', res, 'seconds')
-    '''
+    print('CPU Execution time:', res, 'seconds')'''

@@ -35,8 +35,8 @@
   </collision>
 
   <contact>
-    <lateral_friction value=".3"/>
-    <rolling_friction value=".1"/>
+    <!--lateral_friction value=".3"/-->
+    <rolling_friction value=".05"/>
     <!--contact_cfm value="11"/-->
     <!--contact_erp value="1"/-->
     <!--stiffness value="3000000"/-->

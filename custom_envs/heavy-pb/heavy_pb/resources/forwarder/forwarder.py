@@ -231,39 +231,6 @@ class Forwarder:
 
         return observation
 
-
-class WoodPile():
-
-    def __init__(self, initialWoodPos, initialWoodRot, layerDim, nLayers, offset):
-        self.initialWoodPos = initialWoodPos.copy()
-        self.initialWoodRot = initialWoodRot.copy()
-        self.layerDim = layerDim
-        self.nLayers = nLayers
-        self.offset = offset
-        self.f_name = os.path.join(os.path.dirname(__file__), "wood.urdf")
-
-        self.createWoodPile()
-
-    def createWoodPile(self):
-
-        layer_old = 0
-
-        for layer in range(self.nLayers):
-            for _ in range(self.layerDim):
-                wood = p.loadURDF(self.f_name, 
-                        self.initialWoodPos, 
-                        p.getQuaternionFromEuler(self.initialWoodRot),
-                        useMaximalCoordinates=True,
-                        flags=p.URDF_USE_INERTIA_FROM_FILE,
-                        #globalScaling=0.8
-                        )
-                p.changeVisualShape(wood,-1,rgbaColor=[0.8,0.8,0.8,1])
-                self.initialWoodPos[1] += self.offset
-                if(layer_old != layer):
-                    self.initialWoodPos[1] = 1
-                    layer_old = layer
-            self.initialWoodPos[2] += self.offset
-
 class TriggerVolume():
 
     def __init__(self, origin, rot, dimensions):#l, w, h):
@@ -348,3 +315,103 @@ class MassSensor():
                     mass += dynInfo[0]
         return mass
         
+
+class WoodPile2():
+
+    def __init__(self, initialWoodPos, initialWoodRot, layerDim, nLayers, offset):
+        self.initialWoodPos = initialWoodPos.copy()
+        self.initialWoodRot = initialWoodRot.copy()
+        self.layerDim = layerDim
+        self.nLayers = nLayers
+        self.offset = offset
+        self.f_name = os.path.join(os.path.dirname(__file__), "wood.urdf")
+        self.radius = .25
+        self.length = 4
+        self.meshScale = [1,1,1]
+
+        self.shift = [0, -0.02, 0]
+        self.shift1 = [0, 0.1, 0]
+        self.shift2 = [0, 0, 0]
+
+        self.visualShapeId = p.createVisualShape(shapeType=p.GEOM_CYLINDER,
+                                         #halfExtents=[[0, 0, 0], [0.1, 0.1, 0.1]],
+                                         radius=self.radius ,
+                                         length=self.length,
+                                         #fileName="meshes/wood.obj",
+                                         visualFramePosition=[
+                                             self.shift1,
+                                             self.shift2,
+                                         ],
+                                         meshScale=self.meshScale,
+                                         )
+
+        self.collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_CYLINDER,
+                                                radius=self.radius,
+                                                height=self.length,
+                                                collisionFramePosition=[
+                                                   self.shift1,
+                                                   self.shift2,
+                                                ],
+                                                meshScale=self.meshScale)
+        #texUid = p.loadTexture("/Users/ilyakurinov/Downloads/Forwarder/Forwarder/meshes/textures/wood_bark_tex.jpg")
+        self.wood_list = self.createWoodPile()
+
+    def createWoodPile(self):
+        wood_list = list()
+        layer_old = 0
+        for layer in range(self.nLayers):
+            for _ in range(self.layerDim):
+                mb = p.createMultiBody(baseMass=400,
+                                        baseInertialFramePosition=[0, 0, 0],
+                                        baseCollisionShapeIndex=self.collisionShapeId,
+                                        baseVisualShapeIndex=self.visualShapeId,
+                                        basePosition=self.initialWoodPos,
+                                        baseOrientation=p.getQuaternionFromEuler(self.initialWoodRot),
+                                        useMaximalCoordinates=False)
+                p.changeVisualShape(mb, -1, rgbaColor=[0.54, .34, .129, 1])
+                wood_list.append(mb)
+                self.initialWoodPos[1] += self.offset
+                if(layer_old != layer):
+                    self.initialWoodPos[1] = 1
+                    layer_old = layer
+                p.changeDynamics(mb, -1, rollingFriction=0.008)
+
+            self.initialWoodPos[2] += self.offset
+        return mb
+
+
+class WoodPile():
+
+    def __init__(self, initialWoodPos, initialWoodRot, layerDim, nLayers, offset):
+        self.initialWoodPos = initialWoodPos.copy()
+        self.initialWoodRot = initialWoodRot.copy()
+        self.layerDim = layerDim
+        self.nLayers = nLayers
+        self.offset = offset
+        self.f_name = os.path.join(os.path.dirname(__file__), "wood.urdf")
+        
+        
+
+        self.wood_list = self.createWoodPile()
+
+    def createWoodPile(self):
+        layer_old = 0
+        wood_list = list()
+
+        for layer in range(self.nLayers):
+            for _ in range(self.layerDim):
+                wood = p.loadURDF(self.f_name, 
+                        self.initialWoodPos, 
+                        p.getQuaternionFromEuler(self.initialWoodRot),
+                        useMaximalCoordinates=True,
+                        flags=p.URDF_USE_INERTIA_FROM_FILE,
+                        #globalScaling=0.8
+                        )
+                p.changeVisualShape(wood,-1,rgbaColor=[0.8,0.8,0.8,1])
+                wood_list.append(wood)
+                self.initialWoodPos[1] += self.offset
+                if(layer_old != layer):
+                    self.initialWoodPos[1] = 1
+                    layer_old = layer
+            self.initialWoodPos[2] += self.offset
+        return wood_list

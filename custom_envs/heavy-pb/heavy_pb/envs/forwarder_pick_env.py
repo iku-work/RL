@@ -1,5 +1,5 @@
 import gym
-from heavy_pb.resources.forwarder.forwarder import Forwarder, WoodPile, MassSensor
+from heavy_pb.resources.forwarder.forwarder import Forwarder, WoodPile,WoodPile2, MassSensor
 import pybullet as p
 import numpy as np
 import pybullet_data
@@ -30,7 +30,7 @@ class ForwarderPick(gym.Env):
         self.vis_obs_width = 60
         self.vis_obs_height = 60
 
-        self.action_scale = np.array([.2, .2, .2, .1, .1, .5])
+        self.action_scale = np.array([.05, .05, .05, .05, .5, .5])
         self.action_low = -1
         self.action_max = 1
         self.action_low_arr = np.full((6,), self.action_low, dtype = np.float32) #* self.action_scale
@@ -52,7 +52,7 @@ class ForwarderPick(gym.Env):
         )
 
         self.update_freq =  160
-        self.frameskip = 30
+        self.frameskip = 90
 
         # Start the simulation
         #self.client = p.connect(p.DIRECT)# p.GUI)# 
@@ -68,12 +68,12 @@ class ForwarderPick(gym.Env):
         self.forwarder = Forwarder(self.client)
         self.forwarderId = self.forwarder.forwarder
 
-        self.initial_wood_pos = [3.5,0,0.5]
+        self.initial_wood_pos = np.array([3.5,0,0.5])
         self.initial_wood_rot = [1.54 ,0, 1.54]
-        self.layer_dim = 1
+        self.layer_dim = 2
         self.n_layers = 1
-        self.wood_offset = .5
-        self.woodPile = WoodPile(self.initial_wood_pos, 
+        self.wood_offset = 2
+        self.woodPile = WoodPile2(self.initial_wood_pos, 
                                   self.initial_wood_rot, 
                                   self.layer_dim , 
                                   self.n_layers, 
@@ -94,6 +94,8 @@ class ForwarderPick(gym.Env):
         p.enableJointForceTorqueSensor(self.forwarderId, 6)
         p.enableJointForceTorqueSensor(self.forwarderId, 7)
 
+        self.dist_now = 50
+        self.last_smallest_dist = 50
 
         # Set timestep
         #p.setTimeStep(1/self.update_freq, self.client)
@@ -105,9 +107,11 @@ class ForwarderPick(gym.Env):
         #self.forwarder.apply_action(action)
         avg_delta = 1
         i = 0
-        
+
+        self.forwarder.apply_action(action)
         for _ in range(self.frameskip):
-            self.forwarder.apply_action(action)
+        #while(True):
+            
             p.stepSimulation()
             
             #if(i % 10):
@@ -115,17 +119,18 @@ class ForwarderPick(gym.Env):
             #np_jnt_target_pos =np.zeros(len(self.forwarder.active_joints))
             jnt_states  = p.getJointStates(forwarderId, self.forwarder.active_joints)
             
-            for jnt in jnt_states:
-                jnt_pos_now.append(jnt[0])
+            for ind, jnt in enumerate(jnt_states):
+                if(ind != 7 or ind != 8):
+                    jnt_pos_now.append(jnt[0])
             
             np_jnt_pos_now = np.array(jnt_pos_now)
             delta = np_jnt_pos_now - action 
             
             avg_delta = np.average(delta)
-            
+            #print("avg delta:", avg_delta)
             i += 1
 
-            if (np.abs(avg_delta) < .01):                
+            if (np.abs(avg_delta) < .01):            
                 break
 
     def step(self, action):
@@ -145,7 +150,11 @@ class ForwarderPick(gym.Env):
         else:
             self.forwarder.apply_action(action)
             p.stepSimulation()
-            
+
+        self.dist_now = self.get_dist_to_pile()
+        if( self.dist_now < self.last_smallest_dist):
+            reward +=  (self.last_smallest_dist - self.dist_now)/self.last_smallest_dist  #.001
+            self.last_smallest_dist = self.dist_now
 
         reward += self.massSensor.getMass()
 
@@ -312,6 +321,14 @@ class ForwarderPick(gym.Env):
                 self.client = p.connect(p.DIRECT)
         elif(mode =='GUI'):
                 self.client = p.connect(p.GUI)
+
+    def get_dist_to_pile(self):
+        # Get grapple body pos
+        end_ef = p.getLinkState(self.forwarderId, 6)
+        end_ef = np.asarray(end_ef[0], dtype=np.float32)
+        wood_pos = p.getBasePositionAndOrientation(self.woodPile.wood_list[0])
+        return np.linalg.norm(end_ef - np.asarray(wood_pos[0],dtype=np.float32))
+        
 
 
 ''' 
