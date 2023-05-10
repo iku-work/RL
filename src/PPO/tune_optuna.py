@@ -38,9 +38,10 @@ def objective(trial):
     n_steps = trial.suggest_int("n_steps", 128, 2048, 128)
     n_epochs = trial.suggest_int("n_epochs", 1, 10)
     learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-2)
+    ent_coef = trial.suggest_float("learning_rate", 0, 0.01, 0.002)
     
 
-    model = PPO("MlpPolicy", env, n_steps=n_steps, n_epochs=n_epochs, learning_rate=learning_rate, verbose=0, tensorboard_log=log_dir)
+    model = PPO("MlpPolicy", env, n_steps=n_steps, n_epochs=n_epochs, learning_rate=learning_rate, ent_coef=ent_coef, verbose=0, tensorboard_log=log_dir)
     video_folder = "logs/videos/{}/".format(env_name) 
     customCallback = VideoCallback(video_folder=video_folder, 
                                     env_id=env_id, 
