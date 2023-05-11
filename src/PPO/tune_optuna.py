@@ -5,10 +5,11 @@ from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 import gym 
-from stable_baselines3.common.vec_env import SubprocVecEnv, VecNormalize
+from stable_baselines3.common.vec_env import SubprocVecEnv, VecNormalize, VecTransposeImage
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.monitor import Monitor
 from video_callback import VideoCallback
+import os
 
 def make_env(env_id, rank, seed=0):
     """
@@ -27,12 +28,17 @@ def make_env(env_id, rank, seed=0):
     set_random_seed(seed)
     return _init
 
-log_dir = 'logs'
 env_name = 'forwarder-v0'
 env_id = "heavy_pb:{}".format(env_name) 
 num_cpu = 3  # Number of processes to use
-# Create the vectorized environment
+total_timesteps = 50000
+eval_freq = 12_000
+n_eval_episodes = 10
+gif_rec_freq = 10000
+device = 'cpu'
 
+current_file_dir = os.path.dirname(os.path.abspath(__file__))
+save_dir = os.path.abspath('../../{}/{}'.format(current_file_dir, 'models')) 
 
 def objective(trial):
     n_steps = trial.suggest_int("n_steps", 128, 2048, 128)
@@ -40,24 +46,26 @@ def objective(trial):
     learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-2)
     ent_coef = trial.suggest_float("learning_rate", 0, 0.01, step=0.002)
     
+    log_dir = os.path.abspath('../../{}/{}/trial_{}'.format(current_file_dir, 'logs', [n_steps, n_epochs, round(learning_rate, 4), round(ent_coef, 4)]))  
 
-    model = PPO("MlpPolicy", env, n_steps=n_steps, n_epochs=n_epochs, learning_rate=learning_rate, ent_coef=ent_coef, verbose=0, tensorboard_log=log_dir)
+    model = PPO("CnnPolicy", env, n_steps=n_steps, n_epochs=n_epochs, learning_rate=learning_rate, ent_coef=ent_coef, verbose=0, tensorboard_log=log_dir)
     video_folder = "logs/videos/{}_{}_{}_{}_{}/".format(env_name, n_steps, n_epochs, learning_rate, ent_coef) 
     customCallback = VideoCallback(video_folder=video_folder, 
                                     env_id=env_id, 
                                     gif_name='{}'.format(env_name),
-                                    rec_freq=20000
+                                    rec_freq=gif_rec_freq
                                     )
-    model.learn(total_timesteps=200_000, callback=customCallback)
+    model.learn(total_timesteps=total_timesteps, callback=customCallback)
     
-    mean_reward, _ = evaluate_policy(model, env, 5, False, False, None, None, False,False)
+    mean_reward, _ = evaluate_policy(model, env, n_eval_episodes, False, False, None, None, False,False)
 
     return mean_reward
 
 if __name__ == '__main__':
 
     env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
-    env = VecNormalize(env, norm_obs=True, norm_reward=False)
+    env = VecNormalize(env, norm_obs=False, norm_reward=True)
+    env = VecTransposeImage(env)
 
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=20)

@@ -173,6 +173,8 @@ class ForwarderPick(gym.Env):
         #print('Image type: ', type(self.img[2]))
         #obs = self.forwarder.get_observation()
         obs = self.get_depth_img()
+        
+        #self.get_vis_obs()
         #obs = self.get_segmentation_mask().flatten()
         return self.img[2], reward, done, info
 
@@ -192,9 +194,11 @@ class ForwarderPick(gym.Env):
         
         #p.enableJointForceTorqueSensor(self.forwarderId, 6)
         #p.enableJointForceTorqueSensor(self.forwarderId, 7)
-
+        self.dist_now = 50
+        self.last_smallest_dist = 50
         self.img = self.forwarder.camera.getCameraImage()
         #obs = self.get_depth_img()
+
         
         #obs = self.get_segmentation_mask().flatten()
         #obs = self.forwarder.get_observation()
@@ -224,7 +228,19 @@ class ForwarderPick(gym.Env):
             plt.draw()
             plt.pause(.00001)
         
+    def get_vis_obs(self):
+        # color to fill
+        color = np.array([0,255,0], dtype='uint8')
 
+        # equal color where mask, else image
+        # this would paint your object silhouette entirely with `color`
+        masked_img = np.where(self.img[4][...,None], color, self.img[2])
+
+        # use `addWeighted` to blend the two images
+        # the object will be tinted toward `color`
+        out = cv2.addWeighted(self.img[2], 0.8, masked_img, 0.2,0)
+
+        return out
 
     def render_obs(self, img):
         

@@ -10,18 +10,24 @@ from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.monitor import Monitor
 import os
 from video_callback import VideoCallback
-
+import pathlib
 import time
 
 current_file_dir = os.path.dirname(os.path.abspath(__file__))
-save_dir = 'models'
-log_dir = 'logs'
+save_dir = os.path.abspath('../../{}/{}'.format(current_file_dir, 'models')) 
+log_dir = os.path.abspath('../../{}/{}'.format(current_file_dir, 'logs'))  
+
+env_name = 'forwarder-v0'
+env_id = "heavy_pb:{}".format(env_name) 
+num_cpu = 3  # Number of processes to use
+total_timesteps = 50000
+eval_freq = 12_000
+n_eval_episodes = 10
+gif_rec_freq = 10000
+device = 'cpu'
 
 if(os.name != 'posix'):
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
-
-#if not os.path.exists(save_dir):
-#    os.makedirs(save_dir)  
 
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
@@ -45,10 +51,6 @@ def make_env(env_id, rank, seed=0):
 
 if __name__ == '__main__':
 
-    env_name = 'forwarder-v0'
-    env_id = "heavy_pb:{}".format(env_name) 
-    num_cpu = 3  # Number of processes to use
-    # Create the vectorized environment
     env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
     #env = gym.make(env_id, increment=True)
     env = VecNormalize(env, norm_obs=False, norm_reward=True)
@@ -56,27 +58,26 @@ if __name__ == '__main__':
     eval_callback = EvalCallback(env ,
                                 best_model_save_path='models',
                                 log_path=log_dir,
-                                eval_freq=12000,
-                                n_eval_episodes=10,
+                                eval_freq=eval_freq,
+                                n_eval_episodes=n_eval_episodes,
                                 deterministic=True,
                                 render=False,
                                 callback_on_new_best=None)
-    
 
     video_folder = "logs/videos/{}/".format(env_name) 
     customCallback = VideoCallback(video_folder=video_folder, 
                                     env_id=env_id, 
                                     gif_name='{}'.format(env_name),
-                                    rec_freq=1e3
+                                    rec_freq=gif_rec_freq
                                     )
 
     #env.env_method('set_frame_skip', fs)
-    model = PPO("CnnPolicy", env, verbose=1, tensorboard_log=log_dir, device='cpu')
-    model.learn(total_timesteps=50000, 
+    model = PPO("CnnPolicy", env, verbose=1, tensorboard_log=log_dir, device=device)
+    model.learn(total_timesteps=total_timesteps, 
                 tb_log_name='ppo_{}'.format(env_name),
                 callback=[eval_callback, customCallback]
                 )
-    model.save(save_dir + 'control_{}'.format(env_name))    
+    model.save(save_dir + 'control_{}'.format(env_name))
     
     #from stable_baselines3.common.env_checker import check_env
     #check_env(env)
@@ -88,7 +89,7 @@ if __name__ == '__main__':
         action = model.predict(obs)
         
         obs, rew, done, _ = env.step(action[0])
-
+        print(obs.shape)
         #env.render_obs(obs)
         #env.env_method('render_obs', obs[0])
 
