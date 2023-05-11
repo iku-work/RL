@@ -81,7 +81,7 @@ if __name__ == '__main__':
     
     #from stable_baselines3.common.env_checker import check_env
     #check_env(env)
-    '''
+    ''' 
     st = time.process_time()
     obs = env.reset()
 
@@ -89,9 +89,9 @@ if __name__ == '__main__':
         action = model.predict(obs)
         
         obs, rew, done, _ = env.step(action[0])
-        print(obs.shape)
+        #print(obs.shape)
         #env.render_obs(obs)
-        #env.env_method('render_obs', obs[0])
+        env.env_method('render_obs', obs[0])
 
         if(done.all()):
             env.reset()
@@ -99,6 +99,6 @@ if __name__ == '__main__':
     et = time.process_time()
 
     # get execution time
-    res = et - st
+    res = et - st'''
     print('CPU Execution time:', res, 'seconds')
-    '''
+    

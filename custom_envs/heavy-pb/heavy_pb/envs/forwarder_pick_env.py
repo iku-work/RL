@@ -89,8 +89,8 @@ class ForwarderPick(gym.Env):
             high= self.action_high_arr,
             dtype = np.float32
         )
-        self.reset()
-        self.dummy_obs = self.render('rgb_array')
+        
+        self.dummy_obs = self.reset()
 
         self.observation_space = gym.spaces.Box(
             low=0,
@@ -172,11 +172,10 @@ class ForwarderPick(gym.Env):
         self.img = self.forwarder.camera.getCameraImage()
         #print('Image type: ', type(self.img[2]))
         #obs = self.forwarder.get_observation()
-        obs = self.get_depth_img()
-        
-        #self.get_vis_obs()
+        #obs = self.get_depth_img()
+        #obs = self.img[2]
         #obs = self.get_segmentation_mask().flatten()
-        return self.img[2], reward, done, info
+        return self.get_vis_obs(), reward, done, info
 
     def reset(self):
 
@@ -202,7 +201,7 @@ class ForwarderPick(gym.Env):
         
         #obs = self.get_segmentation_mask().flatten()
         #obs = self.forwarder.get_observation()
-        return self.img[2]
+        return self.get_vis_obs()
     
     def close(self):
 
@@ -234,13 +233,13 @@ class ForwarderPick(gym.Env):
 
         # equal color where mask, else image
         # this would paint your object silhouette entirely with `color`
-        masked_img = np.where(self.img[4][...,None], color, self.img[2])
+        #masked_img = np.where(self.img[4][...,None], color, self.img[2])
 
         # use `addWeighted` to blend the two images
         # the object will be tinted toward `color`
-        out = cv2.addWeighted(self.img[2], 0.8, masked_img, 0.2,0)
+        #out = cv2.addWeighted(self.img[2], 0.8, self.img[4], 0.2,0)
 
-        return out
+        return self.img[2]
 
     def render_obs(self, img):
         
@@ -391,4 +390,5 @@ for i in range(100000):
             delta_high = fwd.delta_high
             print("New high delta: ", delta_high)
 
-        fwd.reset() '''
+        fwd.reset() 
+        '''
