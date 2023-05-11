@@ -35,7 +35,7 @@ total_timesteps = 50000
 eval_freq = 12_000
 n_eval_episodes = 10
 gif_rec_freq = 10000
-device = 'cpu'
+device = 'gpu'
 
 current_file_dir = os.path.dirname(os.path.abspath(__file__))
 save_dir = os.path.abspath('../../{}/{}'.format(current_file_dir, 'models')) 
