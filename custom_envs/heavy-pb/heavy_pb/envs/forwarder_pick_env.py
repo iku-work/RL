@@ -92,8 +92,6 @@ class ForwarderPick(gym.Env):
         self.reset()
         self.dummy_obs = self.render('rgb_array')
 
-        print('Observation shape: ', self.dummy_obs.shape, self.dummy_obs.dtype)
-
         self.observation_space = gym.spaces.Box(
             low=0,
             high=255,
@@ -102,7 +100,6 @@ class ForwarderPick(gym.Env):
             #low=np.full((117,), -np.inf, dtype = np.float32),
             #high=np.full((117,), np.inf, dtype = np.float32),
         )
-
 
         # Set timestep
         #p.setTimeStep(1/self.update_freq, self.client)

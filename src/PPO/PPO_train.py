@@ -2,7 +2,7 @@ import gym
 import numpy as np
 
 from stable_baselines3 import PPO
-from stable_baselines3.common.vec_env import SubprocVecEnv, VecNormalize
+from stable_baselines3.common.vec_env import SubprocVecEnv, VecNormalize, VecTransposeImage
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.evaluation import evaluate_policy
 
@@ -52,6 +52,7 @@ if __name__ == '__main__':
     env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
     #env = gym.make(env_id, increment=True)
     env = VecNormalize(env, norm_obs=False, norm_reward=True)
+    env = VecTransposeImage(env)
     eval_callback = EvalCallback(env ,
                                 best_model_save_path='models',
                                 log_path=log_dir,
@@ -69,7 +70,6 @@ if __name__ == '__main__':
                                     rec_freq=1e3
                                     )
 
-    
     #env.env_method('set_frame_skip', fs)
     model = PPO("CnnPolicy", env, verbose=1, tensorboard_log=log_dir, device='cpu')
     model.learn(total_timesteps=50000, 
