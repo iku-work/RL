@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from time import sleep
 import cv2
 
+
 class ForwarderPick(gym.Env):
 
     def __init__(self, **kwargs):
@@ -29,27 +30,13 @@ class ForwarderPick(gym.Env):
     
         self.vis_obs_width = 60
         self.vis_obs_height = 60
+        self.vis_obs_shape = (self.vis_obs_width, self.vis_obs_height)
 
         self.action_scale = np.array([.05, .05, .05, .05, .5, .5])
         self.action_low = -1
         self.action_max = 1
-        self.action_low_arr = np.full((6,), self.action_low, dtype = np.float32) #* self.action_scale
-        self.action_high_arr = np.full((6,), self.action_max, dtype = np.float32)  #* self.action_scale
-
-        self.action_space = gym.spaces.Box(
-            low=self.action_low_arr,
-            high= self.action_high_arr,
-            dtype = np.float32
-        )
-
-        obs_len = self.vis_obs_width * self.vis_obs_height
-
-        self.observation_space = gym.spaces.Box(
-            low=np.full((obs_len,), -np.inf, dtype = np.float32),
-            high=np.full((obs_len,), np.inf, dtype = np.float32),
-            #low=np.full((117,), -np.inf, dtype = np.float32),
-            #high=np.full((117,), np.inf, dtype = np.float32),
-        )
+        self.action_low_arr = np.full((6,), self.action_low,  dtype = np.float32) #* self.action_scale
+        self.action_high_arr = np.full((6,), self.action_max,  dtype = np.float32)  #* self.action_scale
 
         self.update_freq =  160
         self.frameskip = 90
@@ -63,7 +50,7 @@ class ForwarderPick(gym.Env):
         
         p.setRealTimeSimulation(0)
         p.setPhysicsEngineParameter(fixedTimeStep = 1/self.update_freq)
-
+        
         self.plane = p.loadURDF("plane.urdf")
         self.forwarder = Forwarder(self.client)
         self.forwarderId = self.forwarder.forwarder
@@ -96,6 +83,26 @@ class ForwarderPick(gym.Env):
 
         self.dist_now = 50
         self.last_smallest_dist = 50
+
+        self.action_space = gym.spaces.Box(
+            low=self.action_low_arr,
+            high= self.action_high_arr,
+            dtype = np.float32
+        )
+        self.reset()
+        self.dummy_obs = self.render('rgb_array')
+
+        print('Observation shape: ', self.dummy_obs.shape, self.dummy_obs.dtype)
+
+        self.observation_space = gym.spaces.Box(
+            low=0,
+            high=255,
+            shape=self.dummy_obs.shape,
+            dtype = self.dummy_obs.dtype
+            #low=np.full((117,), -np.inf, dtype = np.float32),
+            #high=np.full((117,), np.inf, dtype = np.float32),
+        )
+
 
         # Set timestep
         #p.setTimeStep(1/self.update_freq, self.client)
@@ -162,15 +169,15 @@ class ForwarderPick(gym.Env):
             reward += .1
 
         if (self.check_collision_results()):
-            reward = -.01
+            reward = -.0001
             #done = True
 
         self.img = self.forwarder.camera.getCameraImage()
         #print('Image type: ', type(self.img[2]))
         #obs = self.forwarder.get_observation()
-        obs = self.get_depth_img().flatten()
+        obs = self.get_depth_img()
         #obs = self.get_segmentation_mask().flatten()
-        return obs, reward, done, info
+        return self.img[2], reward, done, info
 
     def reset(self):
 
@@ -190,10 +197,11 @@ class ForwarderPick(gym.Env):
         #p.enableJointForceTorqueSensor(self.forwarderId, 7)
 
         self.img = self.forwarder.camera.getCameraImage()
-        obs = self.get_depth_img().flatten()
+        #obs = self.get_depth_img()
+        
         #obs = self.get_segmentation_mask().flatten()
         #obs = self.forwarder.get_observation()
-        return obs
+        return self.img[2]
     
     def close(self):
 
@@ -203,7 +211,26 @@ class ForwarderPick(gym.Env):
         return super().close()
     
     def render(self, mode='human'):
+        if (mode == 'rgb_array'):
+            return self.img[2]
+        else:
+            if(self.rendered_img == None):
+                width = self.forwarder.camera.img_width
+                height = self.forwarder.camera.img_height
+                channels = 4
+                self.rendered_img =  plt.imshow(np.zeros((width, height, channels)), cmap='gray', vmin=0, vmax=10)
 
+            #depth_buffer = self.get_depth_img()
+            #self.rendered_img.set_data(depth_buffer)
+            self.rendered_img.set_data(self.img[2])
+            #self.rendered_img.set_data(self.get_depth_img())
+            plt.draw()
+            plt.pause(.00001)
+        
+
+
+    def render_obs(self, img):
+        
         if(self.rendered_img == None):
             width = self.forwarder.camera.img_width
             height = self.forwarder.camera.img_height
@@ -212,14 +239,10 @@ class ForwarderPick(gym.Env):
 
         #depth_buffer = self.get_depth_img()
         #self.rendered_img.set_data(depth_buffer)
-        self.rendered_img.set_data(self.img[2])
+        self.rendered_img.set_data(img)
         #self.rendered_img.set_data(self.get_depth_img())
         plt.draw()
         plt.pause(.00001)
-        
-        if (mode == 'rgb_array'):
-            return self.img[2]
-
 
     def get_depth_img(self):
         
