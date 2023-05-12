@@ -10,6 +10,9 @@ from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.monitor import Monitor
 from video_callback import VideoCallback
 import os
+import pathlib
+from torch.cuda import is_available
+import pandas as pd
 
 def make_env(env_id, rank, seed=0):
     """
@@ -31,24 +34,47 @@ def make_env(env_id, rank, seed=0):
 env_name = 'forwarder-v0'
 env_id = "heavy_pb:{}".format(env_name) 
 num_cpu = 3  # Number of processes to use
-total_timesteps = 50000
+total_timesteps = 5000
 eval_freq = 12_000
 n_eval_episodes = 10
 gif_rec_freq = 10000
-device = 'gpu'
+device='cpu'
 
-current_file_dir = os.path.dirname(os.path.abspath(__file__))
-save_dir = os.path.abspath('../../{}/{}'.format(current_file_dir, 'models')) 
+# Uncomment if you want to train with CUDA 
+#if(is_available()):
+#    device = 'cuda'
+
+current_file_dir = pathlib.Path(__file__).parent
+base_dir = current_file_dir.parent.parent
+log_dir = pathlib.Path('{}/{}'.format(str(base_dir),'/logs'))
+save_dir = pathlib.Path('{}/{}'.format(str(base_dir),'/models'))
+
+trials = pd.DataFrame({'n_steps':[], 
+                       'n_epochs':[], 
+                       'learning_rate':[], 
+                       'ent_coef':[], 
+                       'mean_reward':[], 
+                       'score':[]
+                       })
 
 def objective(trial):
     n_steps = trial.suggest_int("n_steps", 128, 2048, 128)
     n_epochs = trial.suggest_int("n_epochs", 1, 10)
     learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-2)
-    ent_coef = trial.suggest_float("learning_rate", 0, 0.01, step=0.002)
+    ent_coef = trial.suggest_float("ent_coef", 0, 0.01, step=0.002)
     
-    log_dir = os.path.abspath('../../{}/{}/trial_{}'.format(current_file_dir, 'logs', [n_steps, n_epochs, round(learning_rate, 4), round(ent_coef, 4)]))  
+    log_dir = pathlib.Path('{}/{}/trial_{}'.format(base_dir, 'logs', [n_steps, n_epochs, round(learning_rate, 4), round(ent_coef, 4)]))  
 
-    model = PPO("CnnPolicy", env, n_steps=n_steps, n_epochs=n_epochs, learning_rate=learning_rate, ent_coef=ent_coef, verbose=0, tensorboard_log=log_dir)
+    model = PPO("CnnPolicy", 
+                env, 
+                n_steps=n_steps, 
+                n_epochs=n_epochs, 
+                learning_rate=learning_rate, 
+                ent_coef=ent_coef, 
+                verbose=0, 
+                tensorboard_log=log_dir
+                )
+    
     video_folder = "logs/videos/{}_{}_{}_{}_{}/".format(env_name, n_steps, n_epochs, learning_rate, ent_coef) 
     customCallback = VideoCallback(video_folder=video_folder, 
                                     env_id=env_id, 
@@ -56,8 +82,16 @@ def objective(trial):
                                     rec_freq=gif_rec_freq
                                     )
     model.learn(total_timesteps=total_timesteps, callback=customCallback)
-    
-    mean_reward, _ = evaluate_policy(model, env, n_eval_episodes, False, False, None, None, False,False)
+    mean_reward, _ = evaluate_policy(model, 
+                                     env, 
+                                     n_eval_episodes, 
+                                     False, 
+                                     False, 
+                                     None, 
+                                     None, 
+                                     False,
+                                     False
+                                     )
 
     return mean_reward
 

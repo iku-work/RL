@@ -12,22 +12,28 @@ import os
 from video_callback import VideoCallback
 import pathlib
 import time
+from torch.cuda import is_available
 
-current_file_dir = os.path.dirname(os.path.abspath(__file__))
-save_dir = os.path.abspath('../../{}/{}'.format(current_file_dir, 'models')) 
-log_dir = os.path.abspath('../../{}/{}'.format(current_file_dir, 'logs'))  
+if(os.name != 'posix'):
+    os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+
+current_file_dir = pathlib.Path(__file__).parent
+base_dir = current_file_dir.parent.parent
+log_dir = pathlib.Path('{}/{}'.format(str(base_dir),'/logs'))
+save_dir = pathlib.Path('{}/{}'.format(str(base_dir),'/models'))
 
 env_name = 'forwarder-v0'
-env_id = "heavy_pb:{}".format(env_name) 
 num_cpu = 3  # Number of processes to use
+env_id = "heavy_pb:{}".format(env_name) 
 total_timesteps = 50000
 eval_freq = 12_000
 n_eval_episodes = 10
 gif_rec_freq = 10000
 device = 'cpu'
 
-if(os.name != 'posix'):
-    os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+# Check if cuda available
+if(is_available()):
+    device = 'cuda'
 
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
@@ -56,7 +62,7 @@ if __name__ == '__main__':
     env = VecNormalize(env, norm_obs=False, norm_reward=True)
     env = VecTransposeImage(env)
     eval_callback = EvalCallback(env ,
-                                best_model_save_path='models',
+                                best_model_save_path=save_dir,
                                 log_path=log_dir,
                                 eval_freq=eval_freq,
                                 n_eval_episodes=n_eval_episodes,
@@ -64,7 +70,7 @@ if __name__ == '__main__':
                                 render=False,
                                 callback_on_new_best=None)
 
-    video_folder = "logs/videos/{}/".format(env_name) 
+    video_folder = "{}/videos/{}/".format(log_dir,env_name) 
     customCallback = VideoCallback(video_folder=video_folder, 
                                     env_id=env_id, 
                                     gif_name='{}'.format(env_name),
