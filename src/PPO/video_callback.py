@@ -69,6 +69,7 @@ class VideoCallback(BaseCallback):
 
     def _on_rollout_end(self) -> None:
         if(int(self.num_timesteps - self.previous_rec_timestep) > self.rec_freq):
+            print("Records")
             self.record_gif(self.model, self.env_id, self.record_len, self.video_folder, self.gif_name)
             self.previous_rec_timestep = self.num_timesteps
 

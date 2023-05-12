@@ -68,6 +68,7 @@ save_dir = pathlib.Path('{}/{}'.format(str(base_dir),'/models'))
 env_name = 'forwarder-v0'
 num_cpu = 3  # Number of processes to use
 env_id = "heavy_pb:{}".format(env_name) 
+env_id = 'CartPole-v1'
 total_timesteps = 50000
 eval_freq = 12_000
 n_eval_episodes = 10
@@ -120,11 +121,11 @@ if __name__ == '__main__':
                                     rec_freq=gif_rec_freq
                                     )
 
-    #env.env_method('set_frame_skip', fs)
+    #env.env_method('set_frame_skip', fs) 
     model = PPO("CnnPolicy", env, verbose=1, tensorboard_log=log_dir, device=device, policy_kwargs=policy_kwargs)
     model.learn(total_timesteps=total_timesteps, 
                 tb_log_name='ppo_{}'.format(env_name),
-                callback=[eval_callback, customCallback]
+                #callback=[eval_callback, customCallback]
                 )
     model.save(save_dir + 'control_{}'.format(env_name))
     

@@ -44,30 +44,18 @@ class ForwarderPick(gym.Env):
         # Start the simulation
         #self.client = p.connect(p.DIRECT)# p.GUI)# 
         p.setAdditionalSearchPath(pybullet_data.getDataPath()) #optionally
-        p.setGravity(0,0,-10)
+        
         p.resetDebugVisualizerCamera(cameraDistance=4, cameraYaw=70, cameraPitch=-22, cameraTargetPosition=[3,0,2])
         p.setPhysicsEngineParameter(fixedTimeStep = 1/self.update_freq,
                                     enableFileCaching=True)
         
-        self.plane = p.loadURDF("plane.urdf")
-        self.forwarder = Forwarder(self.client)
-        self.forwarderId = self.forwarder.forwarder
 
         self.initial_wood_pos = np.array([3.5,0,0.5])
         self.initial_wood_rot = [1.54 ,0, 1.54]
         self.layer_dim = 2
         self.n_layers = 1
         self.wood_offset = 2
-        self.woodPile = WoodPile2(self.initial_wood_pos, 
-                                  self.initial_wood_rot, 
-                                  self.layer_dim , 
-                                  self.n_layers, 
-                                  self.wood_offset
-                                  )
 
-        self.massSensor = MassSensor(self.forwarderId, 
-                                triggerVolDim=[4.5, 1.5, 1.5], 
-                                excludedBodiesIds=[self.plane])
 
         self.rendered_img = None
         self.img = None
@@ -76,8 +64,7 @@ class ForwarderPick(gym.Env):
         # For wait function
         self.delta_high = 0
 
-        p.enableJointForceTorqueSensor(self.forwarderId, 6)
-        p.enableJointForceTorqueSensor(self.forwarderId, 7)
+
 
         self.dist_now = 50
         self.last_smallest_dist = 50
@@ -88,8 +75,16 @@ class ForwarderPick(gym.Env):
             dtype = np.float32
         )
 
-        self.dummy_obs = self.reset()
+        self.init_state = None
+        self.forwarderId = None
+        self.setWorld()
 
+        p.enableJointForceTorqueSensor(self.forwarderId, 6)
+        p.enableJointForceTorqueSensor(self.forwarderId, 7)
+
+        self.init_state = p.saveState()
+
+        self.dummy_obs = self.reset()
         self.observation_space = gym.spaces.Box(
             low=0,
             high=255,
@@ -99,11 +94,26 @@ class ForwarderPick(gym.Env):
             #high=np.full((117,), np.inf, dtype = np.float32),
         )
 
-        
 
-        # Set timestep
-        #p.setTimeStep(1/self.update_freq, self.client)
-        #self.
+    def setWorld(self):
+        p.resetSimulation(self.client)
+        p.setGravity(0,0,-10)
+        self.plane = p.loadURDF("plane.urdf")
+        self.forwarder = Forwarder(self.client)
+        self.forwarderId = self.forwarder.forwarder
+        self.woodPile = WoodPile(self.initial_wood_pos, 
+                                self.initial_wood_rot, 
+                                self.layer_dim , 
+                                self.n_layers, 
+                                self.wood_offset
+                                )
+
+        self.massSensor = MassSensor(self.forwarderId, 
+                            triggerVolDim=[4.5, 1.5, 1.5], 
+                            excludedBodiesIds=[self.plane])
+
+        for _ in range(10):
+            p.stepSimulation()
 
     def actWithWait(self, action):
 
@@ -177,28 +187,10 @@ class ForwarderPick(gym.Env):
 
     def reset(self):
 
-        p.resetSimulation(self.client)
-        p.setGravity(0,0,-10)
-
-        self.plane = p.loadURDF("plane.urdf")
-        self.forwarder = Forwarder(self.client)
-        self.woodPile = WoodPile(self.initial_wood_pos, 
-                                  self.initial_wood_rot, 
-                                  self.layer_dim , 
-                                  self.n_layers, 
-                                  self.wood_offset
-                                  )
-        
-        #p.enableJointForceTorqueSensor(self.forwarderId, 6)
-        #p.enableJointForceTorqueSensor(self.forwarderId, 7)
+        p.restoreState(self.init_state)
         self.dist_now = 50
         self.last_smallest_dist = 50
         self.img = self.forwarder.camera.getCameraImage()
-        #obs = self.get_depth_img()
-
-        
-        #obs = self.get_segmentation_mask().flatten()
-        #obs = self.forwarder.get_observation()
         return self.get_vis_obs()
     
     def close(self):
@@ -378,24 +370,4 @@ for i in range(100000):
             print("New high delta: ", delta_high)
 
         fwd.reset() 
-'''     
-
-'''
-# sample data
-img = np.full((10,10,3), 128, np.uint8)
-
-# sample mask
-mask = np.zeros((10,10), np.uint8)
-mask[3:6, 3:6] = 1
-
-# color to fill
-color = np.array([0,255,0], dtype='uint8')
-
-# equal color where mask, else image
-# this would paint your object silhouette entirely with `color`
-masked_img = np.where(mask[...,None], color, img)
-
-# use `addWeighted` to blend the two images
-# the object will be tinted toward `color`
-out = cv2.addWeighted(img, 0.8, masked_img, 0.2,0)
-print(mask[...,None].shape)'''
+     '''
