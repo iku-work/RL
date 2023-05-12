@@ -32,7 +32,7 @@ class ForwarderPick(gym.Env):
         self.vis_obs_height = 60
         self.vis_obs_shape = (self.vis_obs_width, self.vis_obs_height)
 
-        self.action_scale = np.array([.05, .05, .05, .05, .5, .5])
+        self.action_scale = np.array([.05, .05, .05, .05, .1, .1])
         self.action_low = -1
         self.action_max = 1
         self.action_low_arr = np.full((6,), self.action_low,  dtype = np.float32) #* self.action_scale
@@ -113,12 +113,10 @@ class ForwarderPick(gym.Env):
         i = 0
 
         self.forwarder.apply_action(action)
-        for _ in range(self.frameskip):
-        #while(True):
-            
+        for _ in range(self.frameskip):            
             p.stepSimulation()
             
-            #if(i % 10):
+            '''#if(i % 10):
             jnt_pos_now = []
             #np_jnt_target_pos =np.zeros(len(self.forwarder.active_joints))
             jnt_states  = p.getJointStates(forwarderId, self.forwarder.active_joints)
@@ -134,8 +132,8 @@ class ForwarderPick(gym.Env):
             #print("avg delta:", avg_delta)
             i += 1
 
-            if (np.abs(avg_delta) < .01):            
-                break
+            if (np.less_equal(np.abs(avg_delta), .01) ):            
+                break'''
 
     def step(self, action):
         
@@ -355,7 +353,7 @@ class ForwarderPick(gym.Env):
         
 
 
-''' '''
+''' 
 from time import sleep
 
 fwd = ForwarderPick()
@@ -380,7 +378,7 @@ for i in range(100000):
             print("New high delta: ", delta_high)
 
         fwd.reset() 
-        
+'''     
 
 '''
 # sample data

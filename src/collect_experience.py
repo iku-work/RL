@@ -20,7 +20,8 @@ obs = env.reset()
 pygame.init()
 # Initialize the joysticks.
 pygame.joystick.init()
-#joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
+joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
+print('JOYSTICS:', joysticks)
 joystick = pygame.joystick.Joystick(0)
 
 invert_control = np.array([-1,1,1,1,1,1])
@@ -49,6 +50,7 @@ for i in range(20000):
       button = joystick.get_button(i)
       buttons.append(button)
    
+   print(action)
    action = action * invert_control
    obs, rew, done, info = env.step(action) 
    trajectories['act'].append(axes_vals)

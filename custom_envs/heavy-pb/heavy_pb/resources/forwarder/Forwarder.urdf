@@ -335,7 +335,7 @@
   </actuator>
 </transmission>
 
-<joint name="Revolute_26" type="continuous">
+<joint name="Revolute_26" type="revolute">
   <origin xyz="0.0 -0.076801 -0.204759" rpy="0 0 0"/>
   <parent link="grappleHook1"/>
   <child link="grappleBody1"/>

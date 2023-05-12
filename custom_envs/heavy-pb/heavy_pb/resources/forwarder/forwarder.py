@@ -127,7 +127,7 @@ class Forwarder:
 
         self.camera = CameraSensor(self.forwarder, 2,4,-1)
 
-        self.max_velocity = [ .25, .25, .25, .25, .8, .8 ]
+        self.max_velocity = [ .1, .1, .1, .1, .1, .5 ]
         self.max_force = [ None, 5e5, None, None, None, 5e4 ]
         self.active_joints = [0,1,2,3,6,8]
         # subject to calibration
