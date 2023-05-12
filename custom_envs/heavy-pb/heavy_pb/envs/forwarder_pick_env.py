@@ -46,10 +46,8 @@ class ForwarderPick(gym.Env):
         p.setAdditionalSearchPath(pybullet_data.getDataPath()) #optionally
         p.setGravity(0,0,-10)
         p.resetDebugVisualizerCamera(cameraDistance=4, cameraYaw=70, cameraPitch=-22, cameraTargetPosition=[3,0,2])
-        p.setPhysicsEngineParameter(enableFileCaching=True)
-        
-        p.setRealTimeSimulation(0)
-        p.setPhysicsEngineParameter(fixedTimeStep = 1/self.update_freq)
+        p.setPhysicsEngineParameter(fixedTimeStep = 1/self.update_freq,
+                                    enableFileCaching=True)
         
         self.plane = p.loadURDF("plane.urdf")
         self.forwarder = Forwarder(self.client)
@@ -89,7 +87,7 @@ class ForwarderPick(gym.Env):
             high= self.action_high_arr,
             dtype = np.float32
         )
-        
+
         self.dummy_obs = self.reset()
 
         self.observation_space = gym.spaces.Box(
@@ -100,6 +98,8 @@ class ForwarderPick(gym.Env):
             #low=np.full((117,), -np.inf, dtype = np.float32),
             #high=np.full((117,), np.inf, dtype = np.float32),
         )
+
+        
 
         # Set timestep
         #p.setTimeStep(1/self.update_freq, self.client)
@@ -228,17 +228,6 @@ class ForwarderPick(gym.Env):
             plt.pause(.00001)
         
     def get_vis_obs(self):
-        # color to fill
-        color = np.array([0,255,0], dtype='uint8')
-
-        # equal color where mask, else image
-        # this would paint your object silhouette entirely with `color`
-        #masked_img = np.where(self.img[4][...,None], color, self.img[2])
-
-        # use `addWeighted` to blend the two images
-        # the object will be tinted toward `color`
-        #out = cv2.addWeighted(self.img[2], 0.8, self.img[4], 0.2,0)
-
         return self.img[2]
 
     def render_obs(self, img):
@@ -366,7 +355,7 @@ class ForwarderPick(gym.Env):
         
 
 
-''' 
+''' '''
 from time import sleep
 
 fwd = ForwarderPick()
@@ -380,7 +369,7 @@ for i in range(100000):
 
     action = fwd.action_space.sample()
     obs, rew, done, _ = fwd.step(action)
-    print(np.max(obs), np.min(obs))
+
     fwd.render()
 
     if (i % 200) == 0 or done:
@@ -391,4 +380,24 @@ for i in range(100000):
             print("New high delta: ", delta_high)
 
         fwd.reset() 
-        '''
+        
+
+'''
+# sample data
+img = np.full((10,10,3), 128, np.uint8)
+
+# sample mask
+mask = np.zeros((10,10), np.uint8)
+mask[3:6, 3:6] = 1
+
+# color to fill
+color = np.array([0,255,0], dtype='uint8')
+
+# equal color where mask, else image
+# this would paint your object silhouette entirely with `color`
+masked_img = np.where(mask[...,None], color, img)
+
+# use `addWeighted` to blend the two images
+# the object will be tinted toward `color`
+out = cv2.addWeighted(img, 0.8, masked_img, 0.2,0)
+print(mask[...,None].shape)'''

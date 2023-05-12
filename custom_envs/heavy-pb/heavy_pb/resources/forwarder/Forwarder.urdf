@@ -297,11 +297,13 @@
   </actuator>
 </transmission>
 
-<joint name="Revolute_38" type="continuous">
+<joint name="Revolute_38" type="revolute">
   <origin xyz="-0.03 1.91394 -0.132446" rpy="0 0 0"/>
   <parent link="extension1"/>
   <child link="intermediateHookJnt1"/>
   <axis xyz="1.0 -0.0 0.0"/>
+  <limit upper=".8" lower="-.8" effort="1" velocity="5"/>
+  <dynamics friction=".6" damping=".6"/>
 </joint>
 <transmission name="Revolute_38_tran">
   <type>transmission_interface/SimpleTransmission</type>
@@ -314,11 +316,13 @@
   </actuator>
 </transmission>
 
-<joint name="Revolute_16" type="continuous">
+<joint name="Revolute_16" type="revolute">
   <origin xyz="0.06 -0.001061 -0.235875" rpy="0 0 0"/>
   <parent link="intermediateHookJnt1"/>
   <child link="grappleHook1"/>
   <axis xyz="-0.0 -0.984744 0.174008"/>
+  <limit upper=".3" lower="-.3" effort="1" velocity="5"/>
+  <dynamics friction=".9" damping=".9"/>
 </joint>
 <transmission name="Revolute_16_tran">
   <type>transmission_interface/SimpleTransmission</type>

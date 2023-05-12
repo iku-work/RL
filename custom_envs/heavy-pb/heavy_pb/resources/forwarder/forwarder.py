@@ -90,6 +90,7 @@ class Forwarder:
                               #useMaximalCoordinates=True,
                               flags=p.URDF_USE_SELF_COLLISION 
                                     | p.URDF_USE_INERTIA_FROM_FILE
+                                    | p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES
                                     #| p.URDF_USE_SELF_COLLISION_EXCLUDE_PARENT
                               )
         
@@ -126,7 +127,7 @@ class Forwarder:
 
         self.camera = CameraSensor(self.forwarder, 2,4,-1)
 
-        self.max_velocity = [ .1, .1, .1, .1, .8, .8 ]
+        self.max_velocity = [ .25, .25, .25, .25, .8, .8 ]
         self.max_force = [ None, 5e5, None, None, None, 5e4 ]
         self.active_joints = [0,1,2,3,6,8]
         # subject to calibration
@@ -192,7 +193,7 @@ class Forwarder:
                                         jnt,
                                         p.POSITION_CONTROL,
                                         targetPosition= action[ind],
-                                        maxVelocity=self.max_velocity[ind],
+                                        #maxVelocity=self.max_velocity[ind],
                                         )        
             else:
                 p.setJointMotorControl2(self.forwarder, 
@@ -200,7 +201,7 @@ class Forwarder:
                                         p.POSITION_CONTROL,
                                         targetPosition=action[ind],
                                         force=self.max_force[ind],
-                                        maxVelocity = self.max_velocity[ind]
+                                        #maxVelocity = self.max_velocity[ind]
                                         )
         
     def get_observation(self):
@@ -389,9 +390,6 @@ class WoodPile():
         self.nLayers = nLayers
         self.offset = offset
         self.f_name = os.path.join(os.path.dirname(__file__), "wood.urdf")
-        
-        
-
         self.wood_list = self.createWoodPile()
 
     def createWoodPile(self):
