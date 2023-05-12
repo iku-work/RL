@@ -193,7 +193,7 @@ class Forwarder:
                                         jnt,
                                         p.POSITION_CONTROL,
                                         targetPosition= action[ind],
-                                        #maxVelocity=self.max_velocity[ind],
+                                        maxVelocity=self.max_velocity[ind],
                                         )        
             else:
                 p.setJointMotorControl2(self.forwarder, 
@@ -201,7 +201,7 @@ class Forwarder:
                                         p.POSITION_CONTROL,
                                         targetPosition=action[ind],
                                         force=self.max_force[ind],
-                                        #maxVelocity = self.max_velocity[ind]
+                                        maxVelocity = self.max_velocity[ind]
                                         )
         
     def get_observation(self):
