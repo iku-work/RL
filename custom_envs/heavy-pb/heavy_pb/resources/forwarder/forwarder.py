@@ -9,11 +9,12 @@ from torch import from_numpy
 
 class CameraSensor():
 
-    def __init__(self, forwarder, mainLink, lookAtLink, offsetZ):
+    def __init__(self, forwarder, mainLink, lookAtLink, offsetZ, lookAtOffsetZ):
         
         self.mainLink = mainLink
         self.lookAtLink = lookAtLink
         self.offsetZ = offsetZ
+        self.lookAtOffsetZ = lookAtOffsetZ
         self.forwarder = forwarder
         
         self.camera_up_vector = [0, 0, 1.0]
@@ -25,25 +26,31 @@ class CameraSensor():
         self.img_height = 128
         self.fov = 90
         self.aspect_ratio = 1
+
+        self.link_pos = None
+        self.look_at_pos = None
+        self.camera_pos = None
+        self.projection_matrix  = None
+        self.view_matrix = None
         
 
     def getCameraImage(self):
 
-        link_pos, _,_,_,_,_= p.getLinkState(self.forwarder, self.mainLink)
-        look_at_pos, _,_,_,_,_= p.getLinkState(self.forwarder, self.lookAtLink)
-        look_at_pos = list(look_at_pos)
-        look_at_pos[2] += self.offsetZ
+        self.link_pos, _,_,_,_,_= p.getLinkState(self.forwarder, self.mainLink)
+        self.look_at_pos, _,_,_,_,_= p.getLinkState(self.forwarder, self.lookAtLink)
+        self.look_at_pos = np.asarray(self.look_at_pos)
+        self.look_at_pos[2] += self.lookAtOffsetZ
 
-        camera_pos = list(link_pos)
-        camera_pos[2] += self.offsetZ
+        self.camera_pos = np.asarray(self.link_pos)
+        self.camera_pos[2] += self.offsetZ
 
-        view_matrix = p.computeViewMatrix(
-                        cameraEyePosition=camera_pos,
-                        cameraTargetPosition=look_at_pos,
+        self.view_matrix = p.computeViewMatrix(
+                        cameraEyePosition=self.camera_pos,
+                        cameraTargetPosition=self.look_at_pos,
                         cameraUpVector=self.camera_up_vector
                         )
         
-        projection_matrix = p.computeProjectionMatrixFOV(
+        self.projection_matrix = p.computeProjectionMatrixFOV(
                                     fov=self.fov, 
                                     aspect=self.aspect_ratio,
                                     nearVal=self.near,
@@ -51,13 +58,12 @@ class CameraSensor():
                                     )
 
         imgs = p.getCameraImage(self.img_width, self.img_height,
-                                    view_matrix,
-                                    projection_matrix, shadow=False,
+                                    self.view_matrix,
+                                    self.projection_matrix, shadow=False,
                                     renderer=p.ER_TINY_RENDERER,
                                     #flags=p.ER_SEGMENTATION_MASK_OBJECT_AND_LINKINDEX
                                     )
         return imgs
-
 
     
 '''# For visual observation processing 
@@ -125,9 +131,8 @@ class Forwarder:
             #print(info)
             print('Joint number: ', info[0], ' Joint name: ', info[12])'''
 
-        self.camera = CameraSensor(self.forwarder, 2,4,-1)
-
-        self.max_velocity = [ .1, .1, .1, .1, .1, .5 ]
+        self.camera = CameraSensor(self.forwarder, 3,4,-0.5, -4)
+        self.max_velocity = [ .1, .1, .1, .1, .8, .5 ]
         self.max_force = [ None, 5e5, None, None, None, 5e4 ]
         self.active_joints = [0,1,2,3,6,8]
         # subject to calibration

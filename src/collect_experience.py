@@ -50,7 +50,7 @@ for i in range(20000):
       button = joystick.get_button(i)
       buttons.append(button)
    
-   print(action)
+
    action = action * invert_control
    obs, rew, done, info = env.step(action) 
    trajectories['act'].append(axes_vals)
@@ -58,17 +58,17 @@ for i in range(20000):
    trajectories['obs'].append(obs)
    trajectories['dones'].append(done)
    env.render()
-
+   print("Reward: ",rew)
    #debug_ctrl = read_debug_params()
    # Y
    if(buttons[3] == True):   
       break
-   # B
+   # X
    if(buttons[2] == True):
       obs = env.reset()
-   # A
+   # B
    if (buttons[1]):
-      
+      exit()
       pass
 df = pd.DataFrame(trajectories)
 

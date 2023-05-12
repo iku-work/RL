@@ -340,7 +340,7 @@
   <parent link="grappleHook1"/>
   <child link="grappleBody1"/>
   <axis xyz="0.0 -0.174008 -0.984744"/>
-  <limit lower="0" upper="1.54"/>
+  <limit lower="0" upper="2"/>
 </joint>
 <transmission name="Revolute_26_tran">
   <type>transmission_interface/SimpleTransmission</type>

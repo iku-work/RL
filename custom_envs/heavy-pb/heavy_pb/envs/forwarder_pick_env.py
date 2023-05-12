@@ -6,6 +6,7 @@ import pybullet_data
 import matplotlib.pyplot as plt
 from time import sleep
 import cv2
+import random
 
 
 class ForwarderPick(gym.Env):
@@ -50,9 +51,9 @@ class ForwarderPick(gym.Env):
                                     enableFileCaching=True)
         
 
-        self.initial_wood_pos = np.array([3.5,0,0.5])
+        self.initial_wood_pos = np.array([-3.5, 2.5,0.5])
         self.initial_wood_rot = [1.54 ,0, 1.54]
-        self.layer_dim = 2
+        self.layer_dim = 1
         self.n_layers = 1
         self.wood_offset = 2
 
@@ -64,7 +65,7 @@ class ForwarderPick(gym.Env):
         # For wait function
         self.delta_high = 0
 
-
+        self.unloading_point = np.array([.1, 3.5, 3.5])
 
         self.dist_now = 50
         self.last_smallest_dist = 50
@@ -164,14 +165,22 @@ class ForwarderPick(gym.Env):
             p.stepSimulation()
 
         self.dist_now = self.get_dist_to_pile()
-        if( self.dist_now < self.last_smallest_dist):
-            reward +=  (self.last_smallest_dist - self.dist_now)/self.last_smallest_dist  #.001
-            self.last_smallest_dist = self.dist_now
+        #if( self.dist_now < self.last_smallest_dist):
+        #reward +=  (self.last_smallest_dist - self.dist_now)/self.last_smallest_dist  #.001
+        #self.last_smallest_dist = self.dist_now
+        
 
-        reward += self.massSensor.getMass()
+        mass = self.massSensor.getMass()
+        reward += mass
+
+        '''if(np.greater(mass, 0)):
+            done = True
+        print("Mass: ", np.greater(mass, 0))'''
 
         if (self.check_grasp()):
-            reward += .1
+            reward += self.get_dist_to_unload() * 0.0001
+        else:
+            reward += (1 - (self.dist_now/10)) * .000001
 
         if (self.check_collision_results()):
             reward = -.0001
@@ -191,6 +200,19 @@ class ForwarderPick(gym.Env):
         self.dist_now = 50
         self.last_smallest_dist = 50
         self.img = self.forwarder.camera.getCameraImage()
+
+        self.initial_wood_pos = [random.choices([-3.8,3.8])[0], 
+                                 random.uniform(1.5,3),
+                                 0.5]
+        print(self.initial_wood_pos)
+
+        if (len(self.initial_wood_rot) != 4):
+            self.initial_wood_rot = p.getQuaternionFromEuler(self.initial_wood_rot)
+        p.resetBasePositionAndOrientation(self.woodPile.wood_list[0],
+                                          self.initial_wood_pos,
+                                          self.initial_wood_rot,
+                                          )
+
         return self.get_vis_obs()
     
     def close(self):
@@ -343,11 +365,16 @@ class ForwarderPick(gym.Env):
         wood_pos = p.getBasePositionAndOrientation(self.woodPile.wood_list[0])
         return np.linalg.norm(end_ef - np.asarray(wood_pos[0],dtype=np.float32))
         
-
+    def get_dist_to_unload(self):
+        end_ef = p.getLinkState(self.forwarderId, 6)
+        end_ef = np.asarray(end_ef[0], dtype=np.float32)
+        return np.linalg.norm(end_ef - np.asarray(self.unloading_point,dtype=np.float32))
 
 ''' 
 from time import sleep
-
+import os
+if(os.name != 'posix'):
+    os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 fwd = ForwarderPick()
 
 action = fwd.action_space.sample()
