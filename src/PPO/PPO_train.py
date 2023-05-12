@@ -105,6 +105,6 @@ if __name__ == '__main__':
     et = time.process_time()
 
     # get execution time
-    res = et - st'''
+    res = et - st
     print('CPU Execution time:', res, 'seconds')
-    
+    '''
