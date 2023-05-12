@@ -204,7 +204,6 @@ class ForwarderPick(gym.Env):
         self.initial_wood_pos = [random.choices([-3.8,3.8])[0], 
                                  random.uniform(1.5,3),
                                  0.5]
-        print(self.initial_wood_pos)
 
         if (len(self.initial_wood_rot) != 4):
             self.initial_wood_rot = p.getQuaternionFromEuler(self.initial_wood_rot)
