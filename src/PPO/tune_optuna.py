@@ -33,7 +33,7 @@ def make_env(env_id, rank, seed=0):
 
 env_name = 'forwarder-v0'
 env_id = "heavy_pb:{}".format(env_name) 
-num_cpu = 3  # Number of processes to use
+num_cpu = 256  # Number of processes to use
 total_timesteps = 5000
 eval_freq = 12_000
 n_eval_episodes = 10
@@ -58,7 +58,10 @@ trials = pd.DataFrame({'n_steps':[],
                        })
 
 def objective(trial):
-    n_steps = trial.suggest_int("n_steps", 128, 2048, 128)
+    
+    # For a small number of the workers
+    #n_steps = trial.suggest_int("n_steps", 128, 2048, 128)
+    n_steps = trial.suggest_int("n_steps", 1, 50)
     n_epochs = trial.suggest_int("n_epochs", 1, 10)
     learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-2)
     ent_coef = trial.suggest_float("ent_coef", 0, 0.01, step=0.002)
@@ -67,7 +70,7 @@ def objective(trial):
 
     model = PPO("CnnPolicy", 
                 env, 
-                n_steps=n_steps, 
+                n_steps=n_steps*num_cpu, 
                 n_epochs=n_epochs, 
                 learning_rate=learning_rate, 
                 ent_coef=ent_coef, 
@@ -81,7 +84,7 @@ def objective(trial):
                                     gif_name='{}'.format(env_name),
                                     rec_freq=gif_rec_freq
                                     )
-    model.learn(total_timesteps=total_timesteps, callback=customCallback)
+    model.learn(total_timesteps=total_timesteps, callback=customCallback, progress_bar=True)
     mean_reward, _ = evaluate_policy(model, 
                                      env, 
                                      n_eval_episodes, 
