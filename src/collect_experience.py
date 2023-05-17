@@ -46,8 +46,8 @@ for i in range(20000):
    # A,B,X,Y,
    # 0,1,2,3
    buttons = list()
-   for i in range(joystick.get_numbuttons()):
-      button = joystick.get_button(i)
+   for ii in range(joystick.get_numbuttons()):
+      button = joystick.get_button(ii)
       buttons.append(button)
    
 
@@ -78,15 +78,7 @@ now = datetime.now()
 # dd/mm/YY H:M:S
 dt_string = now.strftime("%d_%m_%Y_%H_%M")
 
-print(df['obs'].values)
-
-np.savez_compressed(
-    "data/expert_data{}".format(dt_string),
-    expert_actions=df['act'].values,
-    expert_observations=df['obs'].values,
-)
-
-pd.to_pickle(df, 'data/expert_data_{}.pkl'.format(dt_string))
+pd.to_pickle(df, 'data/expert_data_{}_n_steps_{}.pkl'.format(dt_string, i))
 
 env.close()
    # 

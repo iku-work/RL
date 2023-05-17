@@ -239,7 +239,29 @@ class ForwarderPick(gym.Env):
             plt.pause(.00001)
         
     def get_vis_obs(self):
+        
+        #255 * cmap(depth_relative)[:,:,:3]
+        depth_img = self.get_depth_img()  #* np.asarray(self.get_segmentation_mask(), dtype=np.uint8)
+        seg_mask = self.get_segmentation_mask() 
+        
+        seg_indx_wood = seg_mask < 2
+        seg_indx_base = np.logical_not(seg_mask == 1)
+        print('seg indx: ', np.max(seg_mask))
+
+        new_mask = np.zeros(shape=seg_mask.shape)
+        seg_wood = np.where(seg_indx_wood, new_mask, new_mask+255)
+        seg_base = np.where(seg_indx_base, new_mask, new_mask+255)
+
+        rgb =  cv2.resize(self.img[2], (self.vis_obs_width, self.vis_obs_height), interpolation= cv2.INTER_LINEAR)
+
+        zero_mask = np.zeros(shape=seg_mask.shape)
+        seg_mask = np.dstack((zero_mask, seg_wood, seg_base, seg_mask))
+        seg_mask = np.asarray(seg_mask, dtype=np.uint8)
+        rgb = np.asarray(rgb, dtype=np.uint8)
+        obs = cv2.addWeighted(rgb, 0.6, seg_mask, 0.5,0)
         return self.img[2]
+
+        #return self.img[2]
 
     def render_obs(self, img):
         
@@ -248,11 +270,8 @@ class ForwarderPick(gym.Env):
             height = self.forwarder.camera.img_height
             channels = 4
             self.rendered_img =  plt.imshow(np.zeros((width, height, channels)), cmap='gray', vmin=0, vmax=10)
-
-        #depth_buffer = self.get_depth_img()
-        #self.rendered_img.set_data(depth_buffer)
+        
         self.rendered_img.set_data(img)
-        #self.rendered_img.set_data(self.get_depth_img())
         plt.draw()
         plt.pause(.00001)
 
@@ -261,9 +280,11 @@ class ForwarderPick(gym.Env):
         if(self.img != None):
             depth_buffer = self.img[3].copy()
             depth_buffer = cv2.resize(depth_buffer, (self.vis_obs_width, self.vis_obs_height), interpolation= cv2.INTER_LINEAR)
-            far = self.forwarder.camera.far
+            far = 1000
             near = self.forwarder.camera.near
+            
             depth_buffer = far * near / (far - (far - near) * depth_buffer)
+            print('Near: ', np.min(depth_buffer), ' Far: ', np.max(depth_buffer))
             depth_img = depth_buffer
         else:
             return np.zeros([self.vis_obs_width, self.vis_obs_height])
@@ -272,10 +293,9 @@ class ForwarderPick(gym.Env):
     def get_segmentation_mask(self):
         
         if(self.img != None):
-            #return np.reshape(self.img[4], [self.vis_obs_width, self.vis_obs_height])
             seg_mask = self.img[4].copy().astype('float32')
             seg_mask = cv2.resize(seg_mask, (self.vis_obs_width, self.vis_obs_height), interpolation= cv2.INTER_LINEAR)
-            return self.img[4].copy().resize((self.vis_obs_width, self.vis_obs_height))
+            return seg_mask
         else:
             return np.zeros([self.vis_obs_width, self.vis_obs_height])
 
@@ -386,7 +406,8 @@ for i in range(100000):
     action = fwd.action_space.sample()
     obs, rew, done, _ = fwd.step(action)
 
-    fwd.render()
+    #fwd.render()
+    fwd.render_obs(obs)
 
     if (i % 200) == 0 or done:
         print("Reset at step: ", i)

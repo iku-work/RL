@@ -1,6 +1,7 @@
 import pandas as pd
 import pathlib
 from os import listdir
+import numpy as np
 
 current_file_dir = pathlib.Path(__file__).parent
 base_dir = current_file_dir.parent
@@ -15,13 +16,10 @@ for file in listdir(files_dir):
         df2 = pd.read_pickle(file_path)
         df = pd.concat([df, df2])
 
-print(df2.describe())
-
-
-
-
-
-
+print(df.info())
+filename = 'forwarder_{}_steps.pkl'.format(len(df))
+file_path = '{}/{}'.format(files_dir, filename)
+df.to_pickle(file_path)
 
 #df = pd.read_pickle('/Users/ilyakurinov/Documents/University/RL/data/expert_data_12_05_2023_20_42.pkl')
 #df = pd.DataFrame({''})

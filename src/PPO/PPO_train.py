@@ -16,12 +16,10 @@ from torch.cuda import is_available
 import torch as th
 import torch.nn as nn
 from gym import spaces
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 if(os.name != 'posix'):
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
-
-from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
-
 
 class CustomCNN(BaseFeaturesExtractor):
     """
@@ -60,6 +58,7 @@ policy_kwargs = dict(
 )
 
 
+
 current_file_dir = pathlib.Path(__file__).parent
 base_dir = current_file_dir.parent.parent
 log_dir = pathlib.Path('{}/{}'.format(str(base_dir),'/logs'))
@@ -68,7 +67,7 @@ save_dir = pathlib.Path('{}/{}'.format(str(base_dir),'/models'))
 env_name = 'forwarder-v0'
 num_cpu = 3  # Number of processes to use
 env_id = "heavy_pb:{}".format(env_name) 
-env_id = 'CartPole-v1'
+#env_id = 'CartPole-v1'
 total_timesteps = 50000
 eval_freq = 12_000
 n_eval_episodes = 10
@@ -101,10 +100,10 @@ def make_env(env_id, rank, seed=0):
 
 if __name__ == '__main__':
 
-    env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
-    #env = gym.make(env_id, increment=True)
-    env = VecNormalize(env, norm_obs=False, norm_reward=True)
-    env = VecTransposeImage(env)
+    #env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
+    env = gym.make(env_id)
+    #env = VecNormalize(env, norm_obs=False, norm_reward=True)
+    #env = VecTransposeImage(env)
     eval_callback = EvalCallback(env ,
                                 best_model_save_path=save_dir,
                                 log_path=log_dir,
@@ -123,15 +122,16 @@ if __name__ == '__main__':
 
     #env.env_method('set_frame_skip', fs) 
     model = PPO("CnnPolicy", env, verbose=1, tensorboard_log=log_dir, device=device, policy_kwargs=policy_kwargs)
-    model.learn(total_timesteps=total_timesteps, 
-                tb_log_name='ppo_{}'.format(env_name),
+    #model.learn(total_timesteps=total_timesteps, 
+                #tb_log_name='ppo_{}'.format(env_name),
                 #callback=[eval_callback, customCallback]
-                )
-    model.save(save_dir + 'control_{}'.format(env_name))
+                #)
+    #model.save(save_dir + 'control_{}'.format(env_name))
     
     #from stable_baselines3.common.env_checker import check_env
     #check_env(env)
-    ''' 
+    model.load('/Users/ilyakurinov/Documents/University/RL/a2c_student.zip')
+    ''' '''
     st = time.process_time()
     obs = env.reset()
 
@@ -151,4 +151,4 @@ if __name__ == '__main__':
     # get execution time
     res = et - st
     print('CPU Execution time:', res, 'seconds')
-    '''
+    

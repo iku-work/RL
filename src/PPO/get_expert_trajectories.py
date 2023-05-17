@@ -10,6 +10,7 @@ import gym
 import numpy as np
 import pandas as pd
 from torch.utils.data.dataset import Dataset, random_split
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 class ExpertDataSet(Dataset):
     def __init__(self, expert_observations, expert_actions):
@@ -91,7 +92,7 @@ def pretrain_agent(
         with th.no_grad():
             for data, target in test_loader:
                 data, target = data.to(device), target.to(device)
-
+                
                 if isinstance(env.action_space, gym.spaces.Box):
                     # A2C/PPO policy outputs actions, values, log_prob
                     # SAC/TD3 policy outputs actions only
@@ -134,81 +135,73 @@ def pretrain_agent(
         scheduler.step()
 
     # Implant the trained policy network back into the RL student agent
-    a2c_student.policy = model
+    ppo_student.policy = model
 
-# Example for continuous actions
-# env_id = "LunarLanderContinuous-v2"
 
-# Example for discrete actions
+class CustomCNN(BaseFeaturesExtractor):
+    """
+    :param observation_space: (gym.Space)
+    :param features_dim: (int) Number of features extracted.
+        This corresponds to the number of unit for the last layer.
+    """
+
+    def __init__(self, observation_space: spaces.Box, features_dim: int = 256):
+        super().__init__(observation_space, features_dim)
+        # We assume CxHxW images (channels first)
+        # Re-ordering will be done by pre-preprocessing or wrapper
+        n_input_channels = observation_space.shape[0]
+        self.cnn = nn.Sequential(
+            nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=0),
+            nn.ReLU(),
+            nn.Flatten(),
+        )
+
+        # Compute shape by doing one forward pass
+        with th.no_grad():
+            n_flatten = self.cnn(
+                th.as_tensor(observation_space.sample()[None]).float()
+            ).shape[1]
+
+        self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
+
+    def forward(self, observations: th.Tensor) -> th.Tensor:
+        return self.linear(self.cnn(observations))
+
+policy_kwargs = dict(
+    features_extractor_class=CustomCNN,
+    features_extractor_kwargs=dict(features_dim=128),
+)
+
 env_name = 'forwarder-v0'
 env_id = "heavy_pb:{}".format(env_name) 
 #env_id = "CartPole-v1"
 env = gym.make(env_id)
 
-'''
-ppo_expert =  PPO("MlpPolicy", env, verbose=1)#, tensorboard_log=log_dir, device='cpu')
-ppo_expert.learn(total_timesteps=4000)
-ppo_expert.save("ppo_expert")
+data = pd.read_pickle('/Users/ilyakurinov/Documents/University/RL/data/forwarder_107097_steps.pkl')
+ppo_student = PPO("CnnPolicy", env, verbose=1)
+num_interactions = len(data)
 
-mean_reward, std_reward = evaluate_policy(ppo_expert, env, n_eval_episodes=2)
-print(f"Mean reward = {mean_reward} +/- {std_reward}")
-'''
-
-a2c_student = A2C("MlpPolicy", env, verbose=1)
-num_interactions = int(4000)
-
+feature_extractor = CustomCNN()
 
 if isinstance(env.action_space, gym.spaces.Box):
-    expert_observations = np.empty((num_interactions,) + env.observation_space.shape)
+    expert_observations = np.empty((num_interactions,) + (4, 128, 128))
     expert_actions = np.empty((num_interactions,) + (env.action_space.shape[0],))
-
 else:
     expert_observations = np.empty((num_interactions,) + env.observation_space.shape)
     expert_actions = np.empty((num_interactions,) + env.action_space.shape)
 
-'''
-obs = env.reset()
-
-for i in range(num_interactions):
-    action, _ = ppo_expert.predict(obs, deterministic=True)
-    expert_observations[i] = obs
-    expert_actions[i] = action
-    obs, reward, done, info = env.step(action)
-    #done = terminated or truncated
-    if done:
-        obs = env.reset()
-
-np.savez_compressed(
-    "expert_data",
-    expert_actions=expert_actions,
-    expert_observations=expert_observations,
-)
-'''
-data = pd.read_pickle('data\expert_data_09_05_2023_00_02.pkl')
-print(len(data))
+# Change to channel-first 
 for i in range(len(data)):
-    expert_observations[i] = data['obs'].values[i]
+    expert_observations[i] = data['obs'].values[i].transpose()
     expert_actions[i] = data['act'].values[i]
 
 print('expert obs type - ', type(expert_observations))
-# (4000, 6)
-print(expert_actions.shape)
-# (4000, 3600)
-print(expert_observations.shape)
 
-'''
 
-#data = np.load('data\expert_data08_05_2023_23_42.npz', allow_pickle=True)
-
-data = pd.read_pickle('data\expert_data_09_05_2023_00_02.pkl')
-
-expert_observations = data['obs'].values
-expert_actions = data['act'].values
-print(type(expert_actions), type(expert_observations))'''
 expert_dataset = ExpertDataSet(expert_observations, expert_actions)
-
 train_size = int(0.8 * len(expert_dataset))
-
 test_size = len(expert_dataset) - train_size
 
 train_expert_dataset, test_expert_dataset = random_split(
@@ -218,23 +211,25 @@ train_expert_dataset, test_expert_dataset = random_split(
 print("test_expert_dataset: ", len(test_expert_dataset))
 print("train_expert_dataset: ", len(train_expert_dataset))
 
-
-#mean_reward, std_reward = evaluate_policy(a2c_student, env, n_eval_episodes=2)
-#print(f"Mean reward = {mean_reward} +/- {std_reward}")
-
 pretrain_agent(
-    a2c_student,
-    epochs=3,
+    ppo_student,
+    epochs=5,
     scheduler_gamma=0.7,
-    learning_rate=1.0,
+    learning_rate=1,
     log_interval=100,
     no_cuda=True,
     seed=1,
-    batch_size=64,
+    batch_size=128,
     test_batch_size=1000,
 )
-a2c_student.save("a2c_student")
+ppo_student.save("a2c_student")
 
-mean_reward, std_reward = evaluate_policy(a2c_student, env, n_eval_episodes=2)#, render=True)
+obs = env.reset()
 
-print(f"Mean reward = {mean_reward} +/- {std_reward}")
+for _ in range(2000):
+    action, _ = ppo_student.predict(obs, deterministic=True)
+    obs, rew, done, info =  env.step(action)
+    env.render()
+
+    if (done):
+        env.reset()

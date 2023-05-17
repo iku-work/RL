@@ -20,7 +20,7 @@ class CameraSensor():
         self.camera_up_vector = [0, 0, 1.0]
 
         self.near = 0.02
-        self.far = 30
+        self.far = 100
         
         self.img_width = 128
         self.img_height = 128
