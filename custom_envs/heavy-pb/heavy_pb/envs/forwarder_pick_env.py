@@ -246,7 +246,6 @@ class ForwarderPick(gym.Env):
         
         seg_indx_wood = seg_mask < 2
         seg_indx_base = np.logical_not(seg_mask == 1)
-        print('seg indx: ', np.max(seg_mask))
 
         new_mask = np.zeros(shape=seg_mask.shape)
         seg_wood = np.where(seg_indx_wood, new_mask, new_mask+255)
@@ -282,9 +281,7 @@ class ForwarderPick(gym.Env):
             depth_buffer = cv2.resize(depth_buffer, (self.vis_obs_width, self.vis_obs_height), interpolation= cv2.INTER_LINEAR)
             far = 1000
             near = self.forwarder.camera.near
-            
             depth_buffer = far * near / (far - (far - near) * depth_buffer)
-            print('Near: ', np.min(depth_buffer), ' Far: ', np.max(depth_buffer))
             depth_img = depth_buffer
         else:
             return np.zeros([self.vis_obs_width, self.vis_obs_height])

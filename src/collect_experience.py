@@ -27,7 +27,7 @@ joystick = pygame.joystick.Joystick(0)
 invert_control = np.array([-1,1,1,1,1,1])
 
 df = pd.DataFrame()
-trajectories = {'act':[], 'rew':[], 'obs':[], 'dones':[]}
+trajectories = {'act':[], 'rew':[], 'obs':[], 'dones':[], 'seg_mask':[], 'depth_mask':[]}
 i = 0
 for i in range(20000):
 
@@ -37,8 +37,8 @@ for i in range(20000):
    #for joystick in joysticks:
    axes = joystick.get_numaxes()
       #print(axes)
-   for i in range(axes):
-      val = joystick.get_axis(i)
+   for ii in range(axes):
+      val = joystick.get_axis(ii)
       axes_vals.append(val)
    
    action = np.asarray(axes_vals, dtype=np.float32)
@@ -46,8 +46,8 @@ for i in range(20000):
    # A,B,X,Y,
    # 0,1,2,3
    buttons = list()
-   for ii in range(joystick.get_numbuttons()):
-      button = joystick.get_button(ii)
+   for iii in range(joystick.get_numbuttons()):
+      button = joystick.get_button(iii)
       buttons.append(button)
    
 
@@ -57,6 +57,11 @@ for i in range(20000):
    trajectories['rew'].append(rew)
    trajectories['obs'].append(obs)
    trajectories['dones'].append(done)
+   trajectories['seg_mask'].append(env.get_segmentation_mask())
+   trajectories['depth_mask'].append(env.get_depth_img())
+
+   env.get_segmentation_mask()
+
    env.render()
    print("Reward: ",rew)
    #debug_ctrl = read_debug_params()
