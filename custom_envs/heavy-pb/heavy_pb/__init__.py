@@ -14,5 +14,5 @@ register(
 register(
     id='forwarder-v0',
     entry_point='heavy_pb.envs:ForwarderPick',
-    max_episode_steps=1000
+    max_episode_steps=200
 )

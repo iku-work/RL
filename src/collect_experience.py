@@ -63,7 +63,7 @@ for i in range(20000):
    env.get_segmentation_mask()
 
    env.render()
-   print("Reward: ",rew)
+   print("Steps: ", i, " Reward: ",rew)
    #debug_ctrl = read_debug_params()
    # Y
    if(buttons[3] == True):   
