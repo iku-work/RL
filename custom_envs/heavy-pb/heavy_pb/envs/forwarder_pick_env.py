@@ -241,7 +241,7 @@ class ForwarderPick(gym.Env):
     def get_vis_obs(self):
         
         #255 * cmap(depth_relative)[:,:,:3]
-        depth_img = self.get_depth_img()  #* np.asarray(self.get_segmentation_mask(), dtype=np.uint8)
+        '''depth_img = self.get_depth_img()  #* np.asarray(self.get_segmentation_mask(), dtype=np.uint8)
         seg_mask = self.get_segmentation_mask() 
         
         seg_indx_wood = seg_mask < 2
@@ -257,7 +257,7 @@ class ForwarderPick(gym.Env):
         seg_mask = np.dstack((zero_mask, seg_wood, seg_base, seg_mask))
         seg_mask = np.asarray(seg_mask, dtype=np.uint8)
         rgb = np.asarray(rgb, dtype=np.uint8)
-        obs = cv2.addWeighted(rgb, 0.6, seg_mask, 0.5,0)
+        obs = cv2.addWeighted(rgb, 0.6, seg_mask, 0.5,0)'''
         return self.img[2]
 
         #return self.img[2]
@@ -278,7 +278,7 @@ class ForwarderPick(gym.Env):
         
         if(self.img != None):
             depth_buffer = self.img[3].copy()
-            depth_buffer = cv2.resize(depth_buffer, (self.vis_obs_width, self.vis_obs_height), interpolation= cv2.INTER_LINEAR)
+            #depth_buffer = cv2.resize(depth_buffer, (self.vis_obs_width, self.vis_obs_height), interpolation= cv2.INTER_LINEAR)
             far = 1000
             near = self.forwarder.camera.near
             depth_buffer = far * near / (far - (far - near) * depth_buffer)
@@ -291,7 +291,7 @@ class ForwarderPick(gym.Env):
         
         if(self.img != None):
             seg_mask = self.img[4].copy().astype('float32')
-            seg_mask = cv2.resize(seg_mask, (self.vis_obs_width, self.vis_obs_height), interpolation= cv2.INTER_LINEAR)
+            #seg_mask = cv2.resize(seg_mask, (self.vis_obs_width, self.vis_obs_height), interpolation= cv2.INTER_LINEAR)
             return seg_mask
         else:
             return np.zeros([self.vis_obs_width, self.vis_obs_height])

@@ -60,7 +60,6 @@ for i in range(20000):
    trajectories['seg_mask'].append(env.get_segmentation_mask())
    trajectories['depth_mask'].append(env.get_depth_img())
 
-   env.get_segmentation_mask()
 
    env.render()
    print("Steps: ", i, " Reward: ",rew)
@@ -69,7 +68,7 @@ for i in range(20000):
    if(buttons[3] == True):   
       break
    # X
-   if(buttons[2] == True):
+   if(buttons[2] == True or done):
       obs = env.reset()
    # B
    if (buttons[1]):
