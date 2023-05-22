@@ -66,6 +66,7 @@ class ForwarderPick(gym.Env):
         self.delta_high = 0
 
         self.unloading_point = np.array([.1, 3.5, 3.5])
+        self.wood_pos = np.zeros(3)
 
         self.dist_now = 50
         self.last_smallest_dist = 50
@@ -113,7 +114,7 @@ class ForwarderPick(gym.Env):
                             triggerVolDim=[4.5, 1.5, 1.5], 
                             excludedBodiesIds=[self.plane])
 
-        for _ in range(10):
+        for _ in range(60):
             p.stepSimulation()
 
     def actWithWait(self, action):
@@ -164,23 +165,38 @@ class ForwarderPick(gym.Env):
             self.forwarder.apply_action(action)
             p.stepSimulation()
 
-        self.dist_now = self.get_dist_to_pile()
-        #if( self.dist_now < self.last_smallest_dist):
-        #reward +=  (self.last_smallest_dist - self.dist_now)/self.last_smallest_dist  #.001
-        #self.last_smallest_dist = self.dist_now
-        
-
         mass = self.massSensor.getMass()
         reward += mass
 
         '''if(np.greater(mass, 0)):
             done = True
         print("Mass: ", np.greater(mass, 0))'''
-
-        if (self.check_grasp()):
+        grasp = self.check_grasp()
+        '''if (grasp):
             reward += self.get_dist_to_unload() * 0.0001
         else:
-            reward += (1 - (self.dist_now/10)) * .000001
+            reward += (1 - (self.dist_now/10)) * .000001'''
+
+
+        wood_pos = p.getBasePositionAndOrientation(self.woodPile.wood_list[0])
+        wood_pos = np.asarray(wood_pos[0])
+
+        if(not np.allclose(self.wood_pos, wood_pos, atol=.1)):
+            self.wood_pos = wood_pos
+
+        self.dist_now = self.get_dist_to_pile(self.wood_pos)
+
+        #print((not np.allclose(self.wood_pos, wood_pos, atol=.1)) and (not grasp), self.last_smallest_dist)
+        if(grasp):
+            reward += ((15 - self.get_dist_to_unload()) /15) * 0.01
+        else:
+            if(not np.allclose(self.wood_pos, wood_pos, atol=.1)):
+                self.wood_pos = wood_pos
+                self.last_smallest_dist = 50
+            else:
+                if( self.dist_now < self.last_smallest_dist):
+                    reward +=  ((15 - self.dist_now)/15) * 0.001 #self.last_smallest_dist  #.001
+                    self.last_smallest_dist = self.dist_now
 
         if (self.check_collision_results()):
             reward = -.0001
@@ -374,16 +390,15 @@ class ForwarderPick(gym.Env):
         elif(mode =='GUI'):
                 self.client = p.connect(p.GUI)
 
-    def get_dist_to_pile(self):
+    def get_dist_to_pile(self, wood_pos):
         # Get grapple body pos
-        end_ef = p.getLinkState(self.forwarderId, 6)
-        end_ef = np.asarray(end_ef[0], dtype=np.float32)
-        wood_pos = p.getBasePositionAndOrientation(self.woodPile.wood_list[0])
-        return np.linalg.norm(end_ef - np.asarray(wood_pos[0],dtype=np.float32))
+        end_ef = p.getLinkState(self.forwarderId, 7)
+        end_ef = np.asarray(end_ef[0])
+        return np.linalg.norm(end_ef - np.asarray(wood_pos,dtype=np.float32))
         
     def get_dist_to_unload(self):
-        end_ef = p.getLinkState(self.forwarderId, 6)
-        end_ef = np.asarray(end_ef[0], dtype=np.float32)
+        end_ef = p.getLinkState(self.forwarderId, 7)
+        end_ef = np.asarray(end_ef[0])
         return np.linalg.norm(end_ef - np.asarray(self.unloading_point,dtype=np.float32))
 
 ''' 

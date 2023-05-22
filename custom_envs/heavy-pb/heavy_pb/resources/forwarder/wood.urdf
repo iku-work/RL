@@ -26,7 +26,7 @@
     </material>
   </visual>
   
-  <collision concave="yes">
+  <collision concave="no">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <geometry>
       <cylinder length="4" radius=".25"/>

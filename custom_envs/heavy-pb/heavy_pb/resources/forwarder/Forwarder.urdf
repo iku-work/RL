@@ -129,7 +129,7 @@
     <material name="silver"/>
     <material/>
   </visual>
-  <collision concave="yes">
+  <collision concave="no">
     <origin xyz="-0.277147 -3.984785 -4.088466" rpy="0 0 0"/>
     <geometry>
       <mesh filename="meshes/grappleL1.stl" scale="0.001 0.001 0.001"/>
@@ -151,7 +151,7 @@
     <material name="silver"/>
     <material/>
   </visual>
-  <collision concave="yes">
+  <collision concave="no">
     <origin xyz="0.282853 -3.984785 -4.088466" rpy="0 0 0"/>
     <geometry>
       <mesh filename="meshes/grappleR1.stl" scale="0.001 0.001 0.001"/>

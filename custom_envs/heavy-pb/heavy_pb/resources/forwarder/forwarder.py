@@ -107,12 +107,13 @@ class Forwarder:
         =====================================================
         Joint number: 0  Joint name:  cranePillar1
         Joint number: 1  Joint name:  craneArm1
-        Joint number: 2  Joint name:  extension1
-        Joint number: 3  Joint name:  intermediateHookJnt1
-        Joint number: 4  Joint name:  grappleHook1
-        Joint number: 5  Joint name:  grappleBody1
-        Joint number: 6  Joint name:  grappleL1
-        Joint number: 7  Joint name:  grappleR1
+        Joint number: 2  Joint name:  extensionArm1
+        Joint number  3  Joint name:  extension1
+        Joint number: 4  Joint name:  intermediateHookJnt1
+        Joint number: 5  Joint name:  grappleHook1
+        Joint number: 6  Joint name:  grappleBody1
+        Joint number: 7  Joint name:  grappleL1
+        Joint number: 8  Joint name:  grappleR1
         -----------------------------------------------------
         '''
 
