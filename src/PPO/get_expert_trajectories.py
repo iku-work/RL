@@ -81,7 +81,7 @@ class ExpertModel:
 
         if isinstance(self.env.action_space, gym.spaces.Box):
             if('CnnPolicy' in self.student.policy_class.__name__):
-                expert_observations = np.empty((num_interactions,) + self.env.observation_space.shape) #(4, 128, 128)
+                expert_observations = np.empty((num_interactions,) + self.env.observation_space.shape, dtype=np.uint8) #(4, 128, 128)
             expert_actions = np.empty((num_interactions,) + (self.env.action_space.shape[0],))
         else:
             expert_observations = np.empty((num_interactions,) + self.env.observation_space.shape)
@@ -238,14 +238,16 @@ video_dir = pathlib.Path('{}/{}'.format(str(base_dir),'/logs/videos'))
 save_dir = pathlib.Path('{}/{}'.format(str(base_dir),'/models'))
 
 
-student = PPO("CnnPolicy", env, verbose=1)
+student = PPO("CnnPolicy", env, verbose=1, device='cpu')
 #student = DDPG("CnnPolicy", env, verbose=1)
 #num_interactions = len(data)
 
 expert_model = ExpertModel(student=student,
                            expert_dataset_path=dataset_path,
                            env=env,
-                           epochs=1
+                           epochs=1,
+                           no_cuda=True,
+                           verbose=1
                            )
 
 student = expert_model.pretrain_agent()
@@ -261,4 +263,4 @@ callback = VideoCallback(env=env,
                          )
 
 student.learn(600, callback=callback)
-'''
+''' 

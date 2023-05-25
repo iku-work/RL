@@ -280,7 +280,7 @@ class ForwarderPick(gym.Env):
         seg_mask = np.asarray(seg_mask, dtype=np.uint8)
         rgb = np.asarray(rgb, dtype=np.uint8)
         obs = cv2.addWeighted(rgb, 0.6, seg_mask, 0.5,0)'''
-        return self.img[2].transpose()
+        return self.img[2].transpose().astype(np.uint8)
 
         #return self.img[2]
 
