@@ -1,12 +1,14 @@
 from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.vec_env import DummyVecEnv
 import imageio 
 import os 
 import gym
 import numpy as np
 
+
 class VideoCallback(BaseCallback):
 
-    def __init__(self, video_folder: str, verbose: int = 0,  env_id: str = '', record_len: int = 500, gif_name: str = '', rec_freq: int = 10000):
+    def __init__(self, video_folder: str, verbose: int = 0, env = None, env_id: str = '', record_len: int = 500, gif_name: str = '', rec_freq: int = 10000):
         super().__init__(verbose)
         # Those variables will be accessible in the callback
         # (they are defined in the base class)
@@ -17,6 +19,8 @@ class VideoCallback(BaseCallback):
         # Number of time the callback was called
         # self.n_calls = 0  # type: int
         self.num_timesteps = 0  # type: int
+        self.env = env
+        self.env_passed = True
         # local and global variables
         # self.locals = None  # type: Dict[str, Any]
         # self.globals = None  # type: Dict[str, Any]
@@ -36,20 +40,24 @@ class VideoCallback(BaseCallback):
 
         gif_name = '{}_{}'.format(gif_name, self.num_timesteps)
         self.check_name_exsist()
-        env = gym.make(env_id)  
-    
+        
+        if(self.env == None):
+            self.env = gym.make(env_id)  
+            self.env_passed = False
+        #env = DummyVecEnv([lambda: gym.make(env_id)])
+
         images = []
-        obs = env.reset()
-        img = env.render(mode="rgb_array")
+        obs = self.env.reset()
+        img = self.env.render(mode="rgb_array")
         for i in range(record_len):
 
             images.append(img)
             action, _ = self.model.predict(obs, deterministic=True)
-            obs, rew, done ,_ = env.step(action)
-            img = env.render(mode="rgb_array")
+            obs, rew, done ,_ = self.env.step(action)
+            img = self.env.render(mode="rgb_array")
 
             if done:
-                obs = env.reset()
+                obs = self.env.reset()
 
         isExist = os.path.exists(video_folder)
         if not isExist:
@@ -62,7 +70,10 @@ class VideoCallback(BaseCallback):
         except:
             imageio.mimsave(video_folder + "/result_{}_{}.gif".format(gif_name, env_name), [np.array(img) for i, img in enumerate(images) if i%2 == 0], duration=29)
 
-        env.close()
+        print(not self.env_passed)
+        if(not self.env_passed):
+            self.env.close()
+            print("ENV:", self.env)
     
     def _on_step(self) -> bool:
         return True

@@ -77,6 +77,8 @@ class ForwarderPick(gym.Env):
             dtype = np.float32
         )
 
+        #self.action_space = gym.spaces.MultiDiscrete(np.array([4,2,2,2,2,2]))
+
         self.init_state = None
         self.forwarderId = None
         self.setWorld()
@@ -86,10 +88,14 @@ class ForwarderPick(gym.Env):
 
         self.init_state = p.saveState()
 
+        
+        obs_low = np.zeros(shape=(4,128,128))
+        obs_high = np.zeros(shape=(4,128,128))
+        obs_high.fill(255)
         self.dummy_obs = self.reset()
         self.observation_space = gym.spaces.Box(
-            low=0,
-            high=255,
+            low=obs_low,
+            high=obs_high,
             shape=self.dummy_obs.shape,
             dtype = self.dummy_obs.dtype
             #low=np.full((117,), -np.inf, dtype = np.float32),
@@ -274,7 +280,7 @@ class ForwarderPick(gym.Env):
         seg_mask = np.asarray(seg_mask, dtype=np.uint8)
         rgb = np.asarray(rgb, dtype=np.uint8)
         obs = cv2.addWeighted(rgb, 0.6, seg_mask, 0.5,0)'''
-        return self.img[2]
+        return self.img[2].transpose()
 
         #return self.img[2]
 
@@ -416,10 +422,11 @@ delta_high = 0
 for i in range(100000):
 
     action = fwd.action_space.sample()
+    print(action)
     obs, rew, done, _ = fwd.step(action)
 
     #fwd.render()
-    fwd.render_obs(obs)
+    fwd.render_obs(obs.transpose())
 
     if (i % 200) == 0 or done:
         print("Reset at step: ", i)
@@ -429,4 +436,4 @@ for i in range(100000):
             print("New high delta: ", delta_high)
 
         fwd.reset() 
-     '''
+      '''

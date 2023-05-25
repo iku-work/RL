@@ -1,8 +1,9 @@
 import gym 
 import numpy as np
 
-from stable_baselines3 import PPO
-from stable_baselines3.common.vec_env import SubprocVecEnv, VecNormalize, VecTransposeImage
+from stable_baselines3 import PPO, DDPG, TD3, A2C
+from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.vec_env import SubprocVecEnv, VecNormalize, VecTransposeImage, DummyVecEnv
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.evaluation import evaluate_policy
 
@@ -68,10 +69,10 @@ env_name = 'forwarder-v0'
 num_cpu = 3  # Number of processes to use
 env_id = "heavy_pb:{}".format(env_name) 
 #env_id = 'CartPole-v1'
-total_timesteps = 50000
-eval_freq = 12_000
-n_eval_episodes = 10
-gif_rec_freq = 10000
+total_timesteps = 1000
+eval_freq = 100
+n_eval_episodes = 2
+gif_rec_freq = 100
 device = 'cpu'
 
 # Check if cuda available
@@ -101,9 +102,13 @@ def make_env(env_id, rank, seed=0):
 if __name__ == '__main__':
 
     #env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
-    env = gym.make(env_id)
-    #env = VecNormalize(env, norm_obs=False, norm_reward=True)
+    #env = gym.make(env_id)
+    
+    env = DummyVecEnv([lambda: Monitor(gym.make(env_id), filename=None)])
+
+    #env = vec_env = make_vec_env(env_id, n_envs=4, seed=0)
     #env = VecTransposeImage(env)
+    #env = VecNormalize(env, norm_obs=True, norm_reward=True)
     eval_callback = EvalCallback(env ,
                                 best_model_save_path=save_dir,
                                 log_path=log_dir,
@@ -114,7 +119,7 @@ if __name__ == '__main__':
                                 callback_on_new_best=None)
 
     video_folder = "{}/videos/{}/".format(log_dir,env_name) 
-    customCallback = VideoCallback(video_folder=video_folder, 
+    customCallback = VideoCallback(env=env,video_folder=video_folder, 
                                     env_id=env_id, 
                                     gif_name='{}'.format(env_name),
                                     rec_freq=gif_rec_freq
@@ -122,26 +127,30 @@ if __name__ == '__main__':
 
     #env.env_method('set_frame_skip', fs) 
     model = PPO("CnnPolicy", env, verbose=1, tensorboard_log=log_dir, device=device, policy_kwargs=policy_kwargs)
-    #model.learn(total_timesteps=total_timesteps, 
-                #tb_log_name='ppo_{}'.format(env_name),
-                #callback=[eval_callback, customCallback]
-                #)
+    #model = DDPG("CnnPolicy", env, verbose=1)
+    #model = TD3("CnnPolicy", env, verbose=1,)
+    model.learn(total_timesteps=total_timesteps, 
+                tb_log_name='ppo_{}'.format(env_name),
+                callback=[eval_callback, customCallback]
+                )
     #model.save(save_dir + 'control_{}'.format(env_name))
     
     #from stable_baselines3.common.env_checker import check_env
     #check_env(env)
-    model.load('/Users/ilyakurinov/Documents/University/RL/a2c_student.zip')
-    ''' '''
+    
+    #model.load('/Users/ilyakurinov/Documents/University/RL/a2c_student.zip')
+    
     st = time.process_time()
     obs = env.reset()
 
     for i in range(2000):
         action = model.predict(obs)
+        print(action[0])
         
         obs, rew, done, _ = env.step(action[0])
         #print(obs.shape)
-        env.render_obs(obs)
-        #env.env_method('render_obs', obs[0])
+        #env.render_obs(obs)
+        env.env_method('render_obs', obs[0].transpose())
 
         if(done):
             env.reset()
@@ -151,4 +160,4 @@ if __name__ == '__main__':
     # get execution time
     res = et - st
     print('CPU Execution time:', res, 'seconds')
-    
+    ''' ''' 

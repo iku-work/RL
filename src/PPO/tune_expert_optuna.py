@@ -13,6 +13,8 @@ import os
 import pathlib
 from torch.cuda import is_available
 import pandas as pd
+from datetime import datetime
+from get_expert_trajectories import ExpertModel
 
 def make_env(env_id, rank, seed=0):
     """
@@ -31,9 +33,12 @@ def make_env(env_id, rank, seed=0):
     set_random_seed(seed)
     return _init
 
+
+n_trails = 20
+
 env_name = 'forwarder-v0'
 env_id = "heavy_pb:{}".format(env_name) 
-num_cpu = 256  # Number of processes to use
+num_cpu = 2  # Number of processes to use
 total_timesteps = 5000
 eval_freq = 12_000
 n_eval_episodes = 10
@@ -44,48 +49,67 @@ device='cpu'
 #if(is_available()):
 #    device = 'cuda'
 
+dataset_name = 'forwarder_107097_steps.pkl'
 current_file_dir = pathlib.Path(__file__).parent
 base_dir = current_file_dir.parent.parent
+dataset_path = pathlib.Path('{}/{}/{}'.format(str(base_dir), 'data', dataset_name))
 log_dir = pathlib.Path('{}/{}'.format(str(base_dir),'/logs'))
 save_dir = pathlib.Path('{}/{}'.format(str(base_dir),'/models'))
 
-trials = pd.DataFrame({'n_steps':[], 
-                       'n_epochs':[], 
-                       'learning_rate':[], 
-                       'ent_coef':[], 
-                       'mean_reward':[], 
-                       'score':[]
+trials = pd.DataFrame({"scheduler_gamma":[], 
+                       "n_epochs":[], 
+                       "learning_rate":[], 
+                       "batch_size":[], 
+                       'mean_reward':[]
                        })
 
-def objective(trial):
-    
-    # For a small number of the workers
-    #n_steps = trial.suggest_int("n_steps", 128, 2048, 128)
-    n_steps = trial.suggest_int("n_steps", 1, 50)
-    n_epochs = trial.suggest_int("n_epochs", 1, 10)
-    learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-2)
-    ent_coef = trial.suggest_float("ent_coef", 0, 0.01, step=0.002)
-    
-    log_dir = pathlib.Path('{}/{}/trial_{}'.format(base_dir, 'logs', [n_steps, n_epochs, round(learning_rate, 4), round(ent_coef, 4)]))  
 
-    model = PPO("CnnPolicy", 
-                env, 
-                n_steps=n_steps*num_cpu, 
-                n_epochs=n_epochs, 
-                learning_rate=learning_rate, 
-                ent_coef=ent_coef, 
-                verbose=0, 
-                tensorboard_log=log_dir
-                )
+def objective(trial, train_data, test_data):
     
-    video_folder = "logs/videos/{}_{}_{}_{}_{}/".format(env_name, n_steps, n_epochs, learning_rate, ent_coef) 
+    scheduler_gamma = trial.suggest_float("scheduler_gamma", .2, .8, step=.2)
+    n_epochs = trial.suggest_int("n_epochs", 3, 15)
+    learning_rate = trial.suggest_float("learning_rate", .2, .8, step=.2)
+    batch_size = trial.suggest_int("batch_size", 64, 512, 64)
+    parameters = [round(scheduler_gamma, 2), n_epochs, round(learning_rate, 2), batch_size]
+    log_dir = pathlib.Path('{}/{}/trial_{}'.format(base_dir, 'logs', [parameters]))  
+
+    print('Study created. \nScheduler_gamma: {}, \nn_epochs:{},  \nlearning_rate:{}, \nbatch_size:{}'.format(scheduler_gamma, n_epochs, learning_rate, batch_size))
+
+    student = PPO("CnnPolicy", env)
+    
+    expert_model = ExpertModel(student=student,
+                           expert_dataset_path=dataset_path,
+                           env=env,
+                           epochs=n_epochs,
+                           scheduler_gamma=scheduler_gamma,
+                           learning_rate=learning_rate,
+                           batch_size=batch_size,
+                           tensorboard_log_dir=log_dir,
+                           verbose=True
+                           )
+
+
+
+    if((train_data == None) and (test_data == None)):
+        train_data, test_data = expert_model.get_train_test()
+
+    student = expert_model.pretrain_agent(train=train_data, test=test_data)
+    student_save_path = pathlib.Path('{}/expert_{}'.format(save_dir, parameters))
+    student.save(student_save_path)
+
+    video_folder = "logs/videos/{}/".format(parameters) 
     customCallback = VideoCallback(video_folder=video_folder, 
                                     env_id=env_id, 
                                     gif_name='{}'.format(env_name),
                                     rec_freq=gif_rec_freq
                                     )
-    model.learn(total_timesteps=total_timesteps, callback=customCallback, progress_bar=True)
-    mean_reward, _ = evaluate_policy(model, 
+
+    student.learn(total_timesteps=total_timesteps, 
+                tb_log_name='ppo_{}_trial_{}'.format(env_name, parameters),
+                callback=[ customCallback]
+                )
+
+    mean_reward, _ = evaluate_policy(student, 
                                      env, 
                                      n_eval_episodes, 
                                      False, 
@@ -96,16 +120,25 @@ def objective(trial):
                                      False
                                      )
 
+    trials["scheduler_gamma"].append(scheduler_gamma)
+    trials['n_epochs'].append(n_epochs)
+    trials['learning_rate'].append(learning_rate)
+    trials['batch_size"'].append(batch_size)
+    trials['mean_reward'].append(mean_reward)
+
     return mean_reward
 
 if __name__ == '__main__':
 
+    train_data = None
+    test_data = None
+
+    func = lambda trial: objective(trial, train_data, test_data)
     env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
-    env = VecNormalize(env, norm_obs=False, norm_reward=True)
-    env = VecTransposeImage(env)
-
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=20)
+    study.optimize(func, n_trials=n_trails)
 
-#with tf.summary.create_file_writer("logs/").as_default():
-#    optuna.integration.tensorboard.summary(study) #summary_target(study)
+    now = datetime.now()
+    dt_string = now.strftime("%d_%m_%Y_%H_%M")
+    filepath = pathlib.Path('{}/trials_{}.csv'.format(log_dir, dt_string))
+    trials.to_csv(filepath)
