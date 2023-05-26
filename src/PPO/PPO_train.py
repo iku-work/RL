@@ -18,6 +18,7 @@ import torch as th
 import torch.nn as nn
 from gym import spaces
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+from stable_baselines3.common.vec_env import VecFrameStack
 
 if(os.name != 'posix'):
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
@@ -105,6 +106,7 @@ if __name__ == '__main__':
     #env = gym.make(env_id)
     
     env = DummyVecEnv([lambda: Monitor(gym.make(env_id), filename=None)])
+    env = VecFrameStack(env, n_stack=4)
 
     #env = vec_env = make_vec_env(env_id, n_envs=4, seed=0)
     #env = VecTransposeImage(env)
@@ -150,7 +152,8 @@ if __name__ == '__main__':
         obs, rew, done, _ = env.step(action[0])
         #print(obs.shape)
         #env.render_obs(obs)
-        env.env_method('render_obs', obs[0].transpose())
+        #env.env_method('render_obs', obs[0].transpose())
+        env.render()
 
         if(done):
             env.reset()
