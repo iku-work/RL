@@ -40,7 +40,7 @@ class ExpertModel:
                  epochs: int = 10,
                  scheduler_gamma: float =  0.7,
                  learning_rate: float = 1,
-                 log_interval: int =  100,
+                 test_interval: int = 100,
                  no_cuda: bool =  True,
                  seed: int =  1,
                  batch_size: int =  64,
@@ -57,7 +57,7 @@ class ExpertModel:
         self.epochs = epochs
         self.scheduler_gamma = scheduler_gamma
         self.learning_rate = learning_rate
-        self.log_interval = log_interval
+        self.test_interval = test_interval
         self.no_cuda = no_cuda
         self.seed = seed
         self.batch_size = batch_size
@@ -125,10 +125,10 @@ class ExpertModel:
 
         # Here, we use PyTorch `DataLoader` to our load previously created `ExpertDataset` for training
         # and testing
-        train_loader = th.utils.data.DataLoader(
+        self.train_loader = th.utils.data.DataLoader(
             dataset=train_expert_dataset, batch_size=self.batch_size, shuffle=True, **kwargs
         )
-        test_loader = th.utils.data.DataLoader(
+        self.test_loader = th.utils.data.DataLoader(
             dataset=test_expert_dataset,
             batch_size=self.test_batch_size,
             shuffle=True,
@@ -141,9 +141,13 @@ class ExpertModel:
 
         # Now we are finally ready to train the policy model.
         for epoch in range(1, self.epochs + 1):
-            self.train(model, device, train_loader, optimizer, epoch)
-            self.test(model, device, test_loader, epoch)
+            self.train(model, device, self.train_loader, optimizer, epoch)
+            #self.test(model, device, test_loader, epoch)
             scheduler.step()
+        
+        # Close tensorboard writer
+        if(self.use_tb):
+            self.writer.close()
 
         # Implant the trained policy network back into the RL student agent
         self.student.policy = model
@@ -177,20 +181,24 @@ class ExpertModel:
             loss = self.criterion(action_prediction, target)
             loss.backward()
             optimizer.step()
+
             if(self.use_tb):
-                self.writer.add_scalar('Loss/train', self.tb_train_step)
+                self.writer.add_scalar('Loss/train', loss, self.tb_train_step)
                 self.tb_train_step += 1
             
-            if ((batch_idx % self.log_interval == 0) and self.verbose):
-                print(
+            if ((batch_idx % self.test_interval == 0)):
+                self.test(model, device, self.test_loader, epoch)
+                
+                if (self.verbose):
+                    print(
                     "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
                         epoch,
                         batch_idx * len(data),
                         len(train_loader.dataset),
                         100.0 * batch_idx / len(train_loader),
                         loss.item(),
+                        )
                     )
-                )
 
     def test(self, model, device, test_loader, epoch):
         model.eval()
@@ -218,7 +226,7 @@ class ExpertModel:
         test_loss /= len(test_loader.dataset)
         
         if(self.use_tb):        
-            self.writer.add_scalar('Loss/Test', self.tb_train_step)
+            self.writer.add_scalar('Loss/Test', test_loss, self.tb_train_step)
         
         if(self.verbose):
             print(f"Test set: Average loss: {test_loss:.4f}")

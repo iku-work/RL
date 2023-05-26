@@ -126,25 +126,25 @@ if __name__ == '__main__':
                                     )
 
     #env.env_method('set_frame_skip', fs) 
-    model = PPO("CnnPolicy", env, verbose=1, tensorboard_log=log_dir, device=device, policy_kwargs=policy_kwargs)
+    model = PPO("CnnPolicy", env, verbose=1, tensorboard_log=log_dir, device=device)#, policy_kwargs=policy_kwargs)
     #model = DDPG("CnnPolicy", env, verbose=1)
     #model = TD3("CnnPolicy", env, verbose=1,)
-    model.learn(total_timesteps=total_timesteps, 
+    '''model.learn(total_timesteps=total_timesteps, 
                 tb_log_name='ppo_{}'.format(env_name),
                 callback=[eval_callback, customCallback]
-                )
+                )'''
     #model.save(save_dir + 'control_{}'.format(env_name))
     
     #from stable_baselines3.common.env_checker import check_env
     #check_env(env)
     
-    #model.load('/Users/ilyakurinov/Documents/University/RL/a2c_student.zip')
+    model.load('/Users/ilyakurinov/Documents/University/RL/models/expert_[0.6, 4, 0.8, 64]')
     
     st = time.process_time()
     obs = env.reset()
 
     for i in range(2000):
-        action = model.predict(obs)
+        action = model.predict(obs, deterministic=False)
         print(action[0])
         
         obs, rew, done, _ = env.step(action[0])

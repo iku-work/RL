@@ -56,12 +56,6 @@ dataset_path = pathlib.Path('{}/{}/{}'.format(str(base_dir), 'data', dataset_nam
 log_dir = pathlib.Path('{}/{}'.format(str(base_dir),'/logs'))
 save_dir = pathlib.Path('{}/{}'.format(str(base_dir),'/models'))
 
-trials = pd.DataFrame({"scheduler_gamma":[], 
-                       "n_epochs":[], 
-                       "learning_rate":[], 
-                       "batch_size":[], 
-                       'mean_reward':[]
-                       })
 
 
 def objective(trial, train_data, test_data):
@@ -69,11 +63,11 @@ def objective(trial, train_data, test_data):
     scheduler_gamma = trial.suggest_float("scheduler_gamma", .2, .8, step=.2)
     n_epochs = trial.suggest_int("n_epochs", 3, 15)
     learning_rate = trial.suggest_float("learning_rate", .2, .8, step=.2)
-    batch_size = trial.suggest_int("batch_size", 64, 512, 64)
+    batch_size = trial.suggest_int("batch_size", 32, 248, 32)
     parameters = [round(scheduler_gamma, 2), n_epochs, round(learning_rate, 2), batch_size]
     log_dir = pathlib.Path('{}/{}/trial_{}'.format(base_dir, 'logs', [parameters]))  
 
-    print('Study created. \nScheduler_gamma: {}, \nn_epochs:{},  \nlearning_rate:{}, \nbatch_size:{}'.format(scheduler_gamma, n_epochs, learning_rate, batch_size))
+    print('Study created. \nScheduler_gamma: {}, \nn_epochs:{},  \nlearning_rate:{}, \nbatch_size:{}'.format(round(scheduler_gamma, 2), n_epochs, round(learning_rate, 2), batch_size))
 
     student = PPO("CnnPolicy", env)
     
@@ -85,10 +79,7 @@ def objective(trial, train_data, test_data):
                            learning_rate=learning_rate,
                            batch_size=batch_size,
                            tensorboard_log_dir=log_dir,
-                           verbose=True
                            )
-
-
 
     if((train_data == None) and (test_data == None)):
         train_data, test_data = expert_model.get_train_test()
@@ -120,12 +111,6 @@ def objective(trial, train_data, test_data):
                                      False
                                      )
 
-    trials["scheduler_gamma"].append(scheduler_gamma)
-    trials['n_epochs'].append(n_epochs)
-    trials['learning_rate'].append(learning_rate)
-    trials['batch_size"'].append(batch_size)
-    trials['mean_reward'].append(mean_reward)
-
     return mean_reward
 
 if __name__ == '__main__':
@@ -141,4 +126,3 @@ if __name__ == '__main__':
     now = datetime.now()
     dt_string = now.strftime("%d_%m_%Y_%H_%M")
     filepath = pathlib.Path('{}/trials_{}.csv'.format(log_dir, dt_string))
-    trials.to_csv(filepath)
