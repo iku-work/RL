@@ -1,7 +1,7 @@
 import gym 
 import numpy as np
 
-from stable_baselines3 import PPO, DDPG, TD3, A2C
+from stable_baselines3 import PPO, DDPG, TD3, A2C, SAC
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import SubprocVecEnv, VecNormalize, VecTransposeImage, DummyVecEnv
 from stable_baselines3.common.utils import set_random_seed
@@ -20,6 +20,28 @@ from gym import spaces
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.vec_env import VecFrameStack
 
+from custom_cnn_policy import CustomActorCriticPolicy
+from typing import Callable
+
+def linear_schedule(initial_value: float) -> Callable[[float], float]:
+    """
+    Linear learning rate schedule.
+
+    :param initial_value: Initial learning rate.
+    :return: schedule that computes
+      current learning rate depending on remaining progress
+    """
+    def func(progress_remaining: float) -> float:
+        """
+        Progress will decrease from 1 (beginning) to 0.
+
+        :param progress_remaining:
+        :return: current learning rate
+        """
+        return progress_remaining * initial_value
+
+    return func
+
 if(os.name != 'posix'):
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
@@ -36,9 +58,11 @@ class CustomCNN(BaseFeaturesExtractor):
         # Re-ordering will be done by pre-preprocessing or wrapper
         n_input_channels = observation_space.shape[0]
         self.cnn = nn.Sequential(
-            nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),
+            nn.Conv2d(n_input_channels, 64, kernel_size=8, stride=4, padding=0),
             nn.ReLU(),
-            nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=0),
+            nn.Conv2d(64, 32, kernel_size=4, stride=2, padding=0),
+            nn.ReLU(),
+            nn.LSTM(32, 16), 
             nn.ReLU(),
             nn.Flatten(),
         )
@@ -70,10 +94,10 @@ env_name = 'forwarder-v0'
 num_cpu = 3  # Number of processes to use
 env_id = "heavy_pb:{}".format(env_name) 
 #env_id = 'CartPole-v1'
-total_timesteps = 1000
-eval_freq = 100
+total_timesteps = 100000
+eval_freq = 1000
 n_eval_episodes = 2
-gif_rec_freq = 100
+gif_rec_freq = 1000
 device = 'cpu'
 
 # Check if cuda available
@@ -102,11 +126,11 @@ def make_env(env_id, rank, seed=0):
 
 if __name__ == '__main__':
 
-    #env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
+    env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
     #env = gym.make(env_id)
     
-    env = DummyVecEnv([lambda: Monitor(gym.make(env_id), filename=None)])
-    env = VecFrameStack(env, n_stack=4)
+    #env = DummyVecEnv([lambda: Monitor(gym.make(env_id), filename=None)])
+    #env = VecFrameStack(env, n_stack=4)
 
     #env = vec_env = make_vec_env(env_id, n_envs=4, seed=0)
     #env = VecTransposeImage(env)
@@ -121,23 +145,27 @@ if __name__ == '__main__':
                                 callback_on_new_best=None)
 
     video_folder = "{}/videos/{}/".format(log_dir,env_name) 
-    customCallback = VideoCallback(env=env,video_folder=video_folder, 
+    customCallback = VideoCallback(#env=env,
+                                    video_folder=video_folder, 
                                     env_id=env_id, 
                                     gif_name='{}'.format(env_name),
                                     rec_freq=gif_rec_freq
                                     )
 
+    #custom_actor_critic = CustomActorCriticPolicy(env.observation_space, action_space=env.action_space, lr_schedule=linear_schedule(.8))
     #env.env_method('set_frame_skip', fs) 
-    model = PPO("CnnPolicy", env, verbose=1, tensorboard_log=log_dir, device=device)#, policy_kwargs=policy_kwargs)
+    model = PPO('CnnPolicy' , env, verbose=1, tensorboard_log=log_dir, device=device, use_sde=True, sde_sample_freq=1000, policy_kwargs=policy_kwargs) #use_sde - with continious
+    #model.load('/Users/ilyakurinov/Documents/University/RL/models/expert_[0.6, 4, 0.8, 64]')
     #model = DDPG("CnnPolicy", env, verbose=1)
     #model = TD3("CnnPolicy", env, verbose=1,)
+    #model = SAC('CnnPolicy', env, use_sde=True, sde_sample_freq=1000)
     model.learn(total_timesteps=total_timesteps, 
                 tb_log_name='ppo_{}'.format(env_name),
                 callback=[eval_callback, customCallback]
                 )
-    model.save(save_dir + 'control_{}'.format(env_name))    
-    #model.load('/Users/ilyakurinov/Documents/University/RL/models/expert_[0.6, 4, 0.8, 64]')
-    '''
+    model.save('{}/control_{}_CustomFE'.format(str(save_dir),env_name))    
+    
+    
     st = time.process_time()
     obs = env.reset()
 
@@ -151,7 +179,7 @@ if __name__ == '__main__':
         #env.env_method('render_obs', obs[0].transpose())
         env.render()
 
-        if(done):
+        if(done.all()):
             env.reset()
     # get the end time
     et = time.process_time()
@@ -159,4 +187,4 @@ if __name__ == '__main__':
     # get execution time
     res = et - st
     print('CPU Execution time:', res, 'seconds')
-    '''
+    ''' '''
