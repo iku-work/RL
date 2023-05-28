@@ -77,8 +77,7 @@ class ForwarderPick(gym.Env):
             dtype = np.float32
         )
 
-        #self.action_space = gym.spaces.MultiDiscrete(np.array([4,2,2,2,2,2]))
-
+        #self.action_space = gym.spaces.MultiDiscrete(np.array([3,3,3,3,3,3]))
         self.init_state = None
         self.forwarderId = None
         self.setWorld()
@@ -159,6 +158,9 @@ class ForwarderPick(gym.Env):
         done = False
         info = {}
 
+        if(type(self.action_space) == gym.spaces.MultiDiscrete):
+            action = action - 1
+
         if(self.increment):
             action = self.forwarder.incrementJointPosByAction(action, self.action_scale)
         else:
@@ -204,9 +206,9 @@ class ForwarderPick(gym.Env):
                     reward +=  ((15 - self.dist_now)/15) * 0.001 #self.last_smallest_dist  #.001
                     self.last_smallest_dist = self.dist_now
 
-        if (self.check_collision_results()):
+        '''if (self.check_collision_results()):
             reward = -.0001
-            #done = True
+            #done = True'''
 
         self.img = self.forwarder.camera.getCameraImage()
         #print('Image type: ', type(self.img[2]))
@@ -407,7 +409,7 @@ class ForwarderPick(gym.Env):
         end_ef = np.asarray(end_ef[0])
         return np.linalg.norm(end_ef - np.asarray(self.unloading_point,dtype=np.float32))
 
-''' 
+'''
 from time import sleep
 import os
 if(os.name != 'posix'):
@@ -436,4 +438,4 @@ for i in range(100000):
             print("New high delta: ", delta_high)
 
         fwd.reset() 
-      '''
+    '''

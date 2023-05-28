@@ -42,7 +42,7 @@ class VideoCallback(BaseCallback):
         self.check_name_exsist()
         
         if(self.env == None):
-            self.env = gym.make(env_id)  
+            self.env = DummyVecEnv([lambda: gym.make(env_id)])#gym.make(env_id)  
             self.env_passed = False
         #env = DummyVecEnv([lambda: gym.make(env_id)])
 
@@ -56,8 +56,8 @@ class VideoCallback(BaseCallback):
             obs, rew, done ,_ = self.env.step(action)
             img = self.env.render(mode="rgb_array")
 
-            if done:
-                obs = self.env.reset()
+            #if done:
+            #    obs = self.env.reset()
 
         isExist = os.path.exists(video_folder)
         if not isExist:
@@ -70,17 +70,15 @@ class VideoCallback(BaseCallback):
         except:
             imageio.mimsave(video_folder + "/result_{}_{}.gif".format(gif_name, env_name), [np.array(img) for i, img in enumerate(images) if i%2 == 0], duration=29)
 
-        print(not self.env_passed)
         if(not self.env_passed):
             self.env.close()
-            print("ENV:", self.env)
+            self.env = None
     
     def _on_step(self) -> bool:
         return True
 
     def _on_rollout_end(self) -> None:
         if(int(self.num_timesteps - self.previous_rec_timestep) > self.rec_freq):
-            print("Records")
             self.record_gif(self.model, self.env_id, self.record_len, self.video_folder, self.gif_name)
             self.previous_rec_timestep = self.num_timesteps
 
