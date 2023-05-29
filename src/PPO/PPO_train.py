@@ -93,10 +93,10 @@ env_name = 'forwarder-v0'
 num_cpu = 3  # Number of processes to use
 env_id = "heavy_pb:{}".format(env_name) 
 #env_id = 'CartPole-v1'
-total_timesteps = 10000
+total_timesteps = 200000
 eval_freq = 20000
 n_eval_episodes = 2
-gif_rec_freq = 5000
+gif_rec_freq = 20000
 device = 'cpu'
 
 # Check if cuda available
