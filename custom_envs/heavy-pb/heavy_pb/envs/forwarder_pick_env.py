@@ -36,11 +36,11 @@ class ForwarderPick(gym.Env):
         self.action_scale = np.array([.05, .05, .05, .05, .1, .1])
         self.action_low = -1
         self.action_max = 1
-        self.action_low_arr = np.full((6,), self.action_low,  dtype = np.float32) #* self.action_scale
-        self.action_high_arr = np.full((6,), self.action_max,  dtype = np.float32)  #* self.action_scale
+        self.action_low_arr = np.full((6,), self.action_low,  dtype = np.float64) #* self.action_scale
+        self.action_high_arr = np.full((6,), self.action_max,  dtype = np.float64)  #* self.action_scale
 
         self.update_freq =  160
-        self.frameskip = 60
+        self.frameskip = 240
 
         # Start the simulation
         #self.client = p.connect(p.DIRECT)# p.GUI)# 
@@ -71,12 +71,6 @@ class ForwarderPick(gym.Env):
         self.dist_now = 50
         self.last_smallest_dist = 50
 
-        self.action_space = gym.spaces.Box(
-            low=self.action_low_arr,
-            high= self.action_high_arr,
-            dtype = np.float32
-        )
-
         #self.action_space = gym.spaces.MultiDiscrete(np.array([3,3,3,3,3,3]))
         self.init_state = None
         self.forwarderId = None
@@ -87,6 +81,11 @@ class ForwarderPick(gym.Env):
 
         self.init_state = p.saveState()
 
+        self.action_space = gym.spaces.Box(
+            low=self.action_low_arr,
+            high= self.action_high_arr,
+            dtype = np.float32
+        )
         
         obs_low = np.zeros(shape=(4,128,128))
         obs_high = np.zeros(shape=(4,128,128))
@@ -206,9 +205,9 @@ class ForwarderPick(gym.Env):
                     reward +=  ((15 - self.dist_now)/15) * 0.001 #self.last_smallest_dist  #.001
                     self.last_smallest_dist = self.dist_now
 
-        '''if (self.check_collision_results()):
-            reward = -.0001
-            #done = True'''
+        if (self.check_collision_results()):
+            reward = 0
+            #done = True
 
         self.img = self.forwarder.camera.getCameraImage()
         #print('Image type: ', type(self.img[2]))
@@ -216,7 +215,7 @@ class ForwarderPick(gym.Env):
         #obs = self.get_depth_img()
         #obs = self.img[2]
         #obs = self.get_segmentation_mask().flatten()
-        return self.get_vis_obs(), reward, done, info
+        return self.get_vis_obs(mode='seg'), reward, done, info
 
     def reset(self):
 
@@ -236,7 +235,7 @@ class ForwarderPick(gym.Env):
                                           self.initial_wood_rot,
                                           )
 
-        return self.get_vis_obs()
+        return self.get_vis_obs('seg')
     
     def close(self):
 
@@ -262,27 +261,38 @@ class ForwarderPick(gym.Env):
             plt.draw()
             plt.pause(.00001)
         
-    def get_vis_obs(self):
+    def get_vis_obs(self, mode='rgb'):
         
         #255 * cmap(depth_relative)[:,:,:3]
-        '''depth_img = self.get_depth_img()  #* np.asarray(self.get_segmentation_mask(), dtype=np.uint8)
-        seg_mask = self.get_segmentation_mask() 
+
+        if(mode=='rgb'):
+            return self.img[2].transpose().astype(np.uint8)
+
+        elif(mode=='depth'):
+            depth = self.get_depth_img()
+            return np.dstack((depth, depth, depth, depth)).transpose()
         
-        seg_indx_wood = seg_mask < 2
-        seg_indx_base = np.logical_not(seg_mask == 1)
+        elif(mode=='seg'):
 
-        new_mask = np.zeros(shape=seg_mask.shape)
-        seg_wood = np.where(seg_indx_wood, new_mask, new_mask+255)
-        seg_base = np.where(seg_indx_base, new_mask, new_mask+255)
+            rgb = self.img[2].copy()
+            seg_mask = self.get_segmentation_mask() 
+            
+            seg_indx_wood = seg_mask < 2
+            seg_indx_base = np.logical_not(seg_mask == 1)
 
-        rgb =  cv2.resize(self.img[2], (self.vis_obs_width, self.vis_obs_height), interpolation= cv2.INTER_LINEAR)
+            new_mask = np.zeros(shape=seg_mask.shape)
+            seg_wood = np.where(seg_indx_wood, new_mask, new_mask+255)
+            #seg_base = np.where(seg_indx_base, new_mask, new_mask+255)
 
-        zero_mask = np.zeros(shape=seg_mask.shape)
-        seg_mask = np.dstack((zero_mask, seg_wood, seg_base, seg_mask))
-        seg_mask = np.asarray(seg_mask, dtype=np.uint8)
-        rgb = np.asarray(rgb, dtype=np.uint8)
-        obs = cv2.addWeighted(rgb, 0.6, seg_mask, 0.5,0)'''
-        return self.img[2].transpose().astype(np.uint8)
+            #rgb =  cv2.resize(self.img[2], (self.vis_obs_width, self.vis_obs_height), interpolation= cv2.INTER_LINEAR)
+
+            zero_mask = np.zeros(shape=seg_mask.shape)
+            #seg_mask = np.dstack((zero_mask, seg_wood, seg_base, seg_mask))
+            seg_mask = np.dstack((zero_mask, seg_wood, seg_wood, seg_wood))
+            seg_mask = np.asarray(seg_mask, dtype=np.uint8)
+            rgb = np.asarray(rgb, dtype=np.uint8)
+            return cv2.addWeighted(rgb, 0.6, seg_mask, 0.5,0).transpose()
+        
 
         #return self.img[2]
 
@@ -418,6 +428,7 @@ fwd = ForwarderPick()
 
 action = fwd.action_space.sample()
 fwd.reset()
+fwd.increment = False
 
 delta_high = 0
 
@@ -428,7 +439,7 @@ for i in range(100000):
     obs, rew, done, _ = fwd.step(action)
 
     #fwd.render()
-    fwd.render_obs(obs.transpose())
+    #fwd.render_obs(obs.transpose())
 
     if (i % 200) == 0 or done:
         print("Reset at step: ", i)
@@ -438,4 +449,4 @@ for i in range(100000):
             print("New high delta: ", delta_high)
 
         fwd.reset() 
-    '''
+    ''' 

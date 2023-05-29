@@ -94,8 +94,8 @@ class Forwarder:
                               basePosition=[0, 0, 0.1],
                               physicsClientId=client, 
                               #useMaximalCoordinates=True,
-                              flags=p.URDF_USE_SELF_COLLISION 
-                                    | p.URDF_USE_INERTIA_FROM_FILE
+                              flags= p.URDF_USE_INERTIA_FROM_FILE
+                                    | p.URDF_USE_SELF_COLLISION 
                                     | p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES
                                     #| p.URDF_USE_SELF_COLLISION_EXCLUDE_PARENT
                               )
@@ -133,7 +133,7 @@ class Forwarder:
             print('Joint number: ', info[0], ' Joint name: ', info[12])'''
 
         self.camera = CameraSensor(self.forwarder, 3,4,-0.5, -4)
-        self.max_velocity = [ .1, .1, .1, .1, .8, .5 ]
+        self.max_velocity = [ .5, .5, .5, .5, .8, .5 ]
         self.max_force = [ None, 5e5, None, None, None, 5e4 ]
         self.active_joints = [0,1,2,3,6,8]
         # subject to calibration

@@ -58,12 +58,12 @@ class CustomCNN(BaseFeaturesExtractor):
         # Re-ordering will be done by pre-preprocessing or wrapper
         n_input_channels = observation_space.shape[0]
         self.cnn = nn.Sequential(
-            nn.Conv2d(n_input_channels, 64, kernel_size=8, stride=4, padding=0),
+            nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),
             nn.ReLU(),
             nn.Conv2d(64, 32, kernel_size=4, stride=2, padding=0),
             nn.ReLU(),
-            nn.LSTM(32, 16), 
-            nn.ReLU(),
+            #nn.LSTM(32, features_dim, 3), 
+            #nn.ReLU(),
             nn.Flatten(),
         )
 
@@ -79,11 +79,10 @@ class CustomCNN(BaseFeaturesExtractor):
         return self.linear(self.cnn(observations))
 
 policy_kwargs = dict(
-    features_extractor_class=CustomCNN,
+    #features_extractor_class=CustomCNN,
+    net_arch=dict(pi=[128, 128], vf=[128, 128]),
     features_extractor_kwargs=dict(features_dim=128),
 )
-
-
 
 current_file_dir = pathlib.Path(__file__).parent
 base_dir = current_file_dir.parent.parent
@@ -94,10 +93,10 @@ env_name = 'forwarder-v0'
 num_cpu = 3  # Number of processes to use
 env_id = "heavy_pb:{}".format(env_name) 
 #env_id = 'CartPole-v1'
-total_timesteps = 100000
-eval_freq = 1000
+total_timesteps = 10000
+eval_freq = 20000
 n_eval_episodes = 2
-gif_rec_freq = 1000
+gif_rec_freq = 5000
 device = 'cpu'
 
 # Check if cuda available
@@ -117,7 +116,7 @@ def make_env(env_id, rank, seed=0):
     :param rank: (int) index of the subprocess
     """
     def _init():
-        env = gym.make(env_id)
+        env = gym.make(env_id, increment=False, wait=False)
         env.seed(seed + rank)
         env = Monitor(env, filename=None)
         return env
@@ -129,7 +128,7 @@ if __name__ == '__main__':
     env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
     #env = gym.make(env_id)
     
-    #env = DummyVecEnv([lambda: Monitor(gym.make(env_id), filename=None)])
+    #env = DummyVecEnv([lambda: Monitor(gym.make(env_id, increment=False, wait=False), filename=None)])
     #env = VecFrameStack(env, n_stack=4)
 
     #env = vec_env = make_vec_env(env_id, n_envs=4, seed=0)
@@ -154,30 +153,29 @@ if __name__ == '__main__':
 
     #custom_actor_critic = CustomActorCriticPolicy(env.observation_space, action_space=env.action_space, lr_schedule=linear_schedule(.8))
     #env.env_method('set_frame_skip', fs) 
-    model = PPO('CnnPolicy' , env, verbose=1, tensorboard_log=log_dir, device=device, use_sde=True, sde_sample_freq=1000, policy_kwargs=policy_kwargs) #use_sde - with continious
+    model = PPO('CnnPolicy' , env, verbose=1, tensorboard_log=log_dir, device=device, use_sde=True, sde_sample_freq=8, policy_kwargs=policy_kwargs) #use_sde - with continious
     #model.load('/Users/ilyakurinov/Documents/University/RL/models/expert_[0.6, 4, 0.8, 64]')
     #model = DDPG("CnnPolicy", env, verbose=1)
     #model = TD3("CnnPolicy", env, verbose=1,)
-    #model = SAC('CnnPolicy', env, use_sde=True, sde_sample_freq=1000)
+    #model = SAC('CnnPolicy', env, use_sde=True, sde_sample_freq=8)
     model.learn(total_timesteps=total_timesteps, 
                 tb_log_name='ppo_{}'.format(env_name),
                 callback=[eval_callback, customCallback]
                 )
-    model.save('{}/control_{}_CustomFE'.format(str(save_dir),env_name))    
-    
+    model.save('{}/control_{}_CustomFE'.format(str(save_dir),env_name))
     
     st = time.process_time()
     obs = env.reset()
 
     for i in range(2000):
-        action = model.predict(obs, deterministic=False)
+        action = model.predict(obs)
         print(action[0])
         
         obs, rew, done, _ = env.step(action[0])
         #print(obs.shape)
         #env.render_obs(obs)
         #env.env_method('render_obs', obs[0].transpose())
-        env.render()
+        #env.render()
 
         if(done.all()):
             env.reset()
