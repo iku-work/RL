@@ -167,7 +167,8 @@ if __name__ == '__main__':
                 env, 
                 use_sde=True, 
                 sde_sample_freq=16, 
-                verbose=1)
+                verbose=1,
+                buffer_size=100000)
     #model.load('/Users/ilyakurinov/Documents/University/RL/student.zip')
     
     model.learn(total_timesteps=total_timesteps, 
