@@ -64,12 +64,18 @@ for i in range(20000):
    env.render()
    print("Steps: ", i, " Reward: ",rew)
    #debug_ctrl = read_debug_params()
+   if(buttons[0]):
+      save_filename = 'data/save{}.bullet'.format(i)
+      print('Saving state to: {}'.format(save_filename))
+      env.save_state(save_filename)
+
    # Y
-   if(buttons[3] == True):   
+   if(buttons[3]):   
       break
    # X
-   if(buttons[2] == True or done):
+   if(buttons[2]):# or done):
       obs = env.reset()
+      #env.load_state('C:/Data/uni/RL/data/testSave.bullet')
    # B
    if (buttons[1]):
       exit()

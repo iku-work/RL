@@ -419,6 +419,11 @@ class ForwarderPick(gym.Env):
         end_ef = np.asarray(end_ef[0])
         return np.linalg.norm(end_ef - np.asarray(self.unloading_point,dtype=np.float32))
 
+    def save_state(self, save_name):
+        p.saveBullet(save_name)
+    
+    def load_state(self, save_name):
+        p.restoreState(fileName=save_name)
 
 '''
 from time import sleep
