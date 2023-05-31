@@ -16,3 +16,9 @@ register(
     entry_point='heavy_pb.envs:ForwarderPick',
     max_episode_steps=200
 )
+
+register(
+    id='forwarder-curriculum-v0',
+    entry_point='heavy_pb.envs:ForwarderPickCurr',
+    max_episode_steps=200
+)

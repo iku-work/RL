@@ -7,8 +7,10 @@ import matplotlib.pyplot as plt
 from time import sleep
 import cv2
 import random
+import pathlib
+import os
 
-class ForwarderPick(gym.Env):
+class ForwarderPickCurr(gym.Env):
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -32,7 +34,7 @@ class ForwarderPick(gym.Env):
         self.vis_obs_height = 60
         self.vis_obs_shape = (self.vis_obs_width, self.vis_obs_height)
 
-        self.action_scale = np.array([.05, .05, .05, .05, .1, .1])
+        self.action_scale = np.array([.05, .05, .05, .05, 1, 1])
         self.action_low = -1
         self.action_max = 1
         self.action_low_arr = np.full((6,), self.action_low,  dtype = np.float64) #* self.action_scale
@@ -78,7 +80,14 @@ class ForwarderPick(gym.Env):
         p.enableJointForceTorqueSensor(self.forwarderId, 6)
         p.enableJointForceTorqueSensor(self.forwarderId, 7)
 
-        self.init_state = p.saveState()
+
+        self.lvl = 2
+        self.max_lvls = 9
+        self.level_progress = 0
+        # Level progress value when considered achieved and move to new lvl
+        self.learned = 10
+        self.state_filename = self.get_random_state_filename()
+        self.load_state(self.state_filename)
 
         self.action_space = gym.spaces.Box(
             low=self.action_low_arr,
@@ -99,6 +108,24 @@ class ForwarderPick(gym.Env):
             #high=np.full((117,), np.inf, dtype = np.float32),
         )
 
+    def get_random_state_filename(self):
+        
+        current_file_dir = pathlib.Path(__file__).parent.parent
+        states_dir = pathlib.Path('{}/{}'.format(str(current_file_dir), 'resources/forwarder/curriculum_states'))
+        current_level_dir = '{}/lvl{}'.format(states_dir, self.lvl)
+        side = bool(random.getrandbits(1))
+        state_files = []
+
+        if(side):
+            side_folder = '{}/left'.format(current_level_dir)
+        else:
+            side_folder = '{}/right'.format(current_level_dir)
+
+        for path in os.listdir(side_folder):
+            # check if current path is a file
+            if os.path.isfile(os.path.join(side_folder, path)):
+                state_files.append(path)
+        return '{}/{}'.format(side_folder ,random.choice(state_files))   
 
     def setWorld(self):
         p.resetSimulation(self.client)
@@ -121,34 +148,9 @@ class ForwarderPick(gym.Env):
             p.stepSimulation()
 
     def actWithWait(self, action):
-
-        forwarderId = self.forwarder.forwarder
-        #self.forwarder.apply_action(action)
-        avg_delta = 1
-        i = 0
-
         self.forwarder.apply_action(action)
         for _ in range(self.frameskip):            
             p.stepSimulation()
-            
-            '''#if(i % 10):
-            jnt_pos_now = []
-            #np_jnt_target_pos =np.zeros(len(self.forwarder.active_joints))
-            jnt_states  = p.getJointStates(forwarderId, self.forwarder.active_joints)
-            
-            for ind, jnt in enumerate(jnt_states):
-                if(ind != 7 or ind != 8):
-                    jnt_pos_now.append(jnt[0])
-            
-            np_jnt_pos_now = np.array(jnt_pos_now)
-            delta = np_jnt_pos_now - action 
-            
-            avg_delta = np.average(delta)
-            #print("avg delta:", avg_delta)
-            i += 1
-
-            if (np.less_equal(np.abs(avg_delta), .01) ):            
-                break'''
 
     def step(self, action):
         
@@ -172,17 +174,12 @@ class ForwarderPick(gym.Env):
             p.stepSimulation()
 
         mass = self.massSensor.getMass()
-        reward += mass
-
-        '''if(np.greater(mass, 0)):
+        if(np.greater(mass, 0)):
+            reward += mass
+            self.level_progress += 1
             done = True
-        print("Mass: ", np.greater(mass, 0))'''
-        grasp = self.check_grasp()
-        '''if (grasp):
-            reward += self.get_dist_to_unload() * 0.0001
-        else:
-            reward += (1 - (self.dist_now/10)) * .000001'''
 
+        grasp = self.check_grasp()
 
         wood_pos = p.getBasePositionAndOrientation(self.woodPile.wood_list[0])
         wood_pos = np.asarray(wood_pos[0])
@@ -192,7 +189,6 @@ class ForwarderPick(gym.Env):
 
         self.dist_now = self.get_dist_to_pile(self.wood_pos)
 
-        #print((not np.allclose(self.wood_pos, wood_pos, atol=.1)) and (not grasp), self.last_smallest_dist)
         if(grasp):
             reward += ((15 - self.get_dist_to_unload()) /15) * 0.01
         else:
@@ -206,34 +202,23 @@ class ForwarderPick(gym.Env):
 
         if (self.check_collision_results()):
             reward = 0
-            #done = True
 
         self.img = self.forwarder.camera.getCameraImage()
-        #print('Image type: ', type(self.img[2]))
-        #obs = self.forwarder.get_observation()
-        #obs = self.get_depth_img()
-        #obs = self.img[2]
-        #obs = self.get_segmentation_mask().flatten()
         return self.get_vis_obs(mode='seg'), reward, done, info
 
     def reset(self):
+        
+        # Start a new level
+        if(self.level_progress > self.learned and self.lvl < self.max_lvls):
+            self.lvl += 1
+            self.level_progress = 0
 
-        p.restoreState(self.init_state)
+        self.state_filename = self.state_filename = self.get_random_state_filename()
+        self.load_state(self.state_filename)
+
         self.dist_now = 50
         self.last_smallest_dist = 50
         self.img = self.forwarder.camera.getCameraImage()
-
-        self.initial_wood_pos = [random.choices([-3.8,3.8])[0], 
-                                 random.uniform(1.5,3),
-                                 0.5]
-
-        if (len(self.initial_wood_rot) != 4):
-            self.initial_wood_rot = p.getQuaternionFromEuler(self.initial_wood_rot)
-        p.resetBasePositionAndOrientation(self.woodPile.wood_list[0],
-                                          self.initial_wood_pos,
-                                          self.initial_wood_rot,
-                                          )
-
         return self.get_vis_obs('seg')
     
     def close(self):
@@ -429,7 +414,7 @@ from time import sleep
 import os
 if(os.name != 'posix'):
     os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
-fwd = ForwarderPick()
+fwd = ForwarderPickCurr()
 
 action = fwd.action_space.sample()
 fwd.reset()
@@ -440,25 +425,13 @@ delta_high = 0
 for i in range(100000):
 
     action = fwd.action_space.sample()
-    print(action)
-    action = np.full(fill_value=0.5, shape=fwd.action_space.shape)
     obs, rew, done, _ = fwd.step(action)
 
     #fwd.render()
-    seg_mask = fwd.get_segmentation_mask()
-    seg_indx_wood = seg_mask < 2
-    seg_indx_base = np.logical_not(seg_mask == 1)
-
-    new_mask = np.zeros(shape=seg_mask.shape)
-    seg_wood = np.where(seg_indx_wood, new_mask, new_mask+255)
-    seg_base = np.where(seg_indx_base, new_mask, new_mask+255)
-
-    print(seg_mask)
-    seg_mask = np.dstack((seg_mask, seg_mask, seg_mask, seg_mask))
-    fwd.render_obs(seg_wood)
+    fwd.render_obs(obs.transpose())
 
     if (i % 200) == 0 or done:
-        print("Reset at step: ", i)
+        print("Reset at step: ", i, 'Level: ', fwd.lvl,  'Level progress: ', fwd.level_progress)
         
         if (delta_high < fwd.delta_high):
             delta_high = fwd.delta_high

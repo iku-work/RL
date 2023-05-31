@@ -89,7 +89,8 @@ base_dir = current_file_dir.parent.parent
 log_dir = pathlib.Path('{}/{}'.format(str(base_dir),'/logs'))
 save_dir = pathlib.Path('{}/{}'.format(str(base_dir),'/models'))
 
-env_name = 'forwarder-v0'
+#env_name = 'forwarder-v0'
+env_name = 'forwarder-curriculum-v0'
 num_cpu = 3  # Number of processes to use
 env_id = "heavy_pb:{}".format(env_name) 
 #env_id = "BipedalWalker-v3"
@@ -167,13 +168,14 @@ if __name__ == '__main__':
                 use_sde=True, 
                 sde_sample_freq=16, 
                 verbose=1)
-    '''model.load('/Users/ilyakurinov/Documents/University/RL/student.zip')
+    #model.load('/Users/ilyakurinov/Documents/University/RL/student.zip')
 
     model.learn(total_timesteps=total_timesteps, 
                 tb_log_name='ppo_{}'.format(env_name),
                 callback=[eval_callback, customCallback]
                 )
     model.save('{}/control_{}_CustomFE'.format(str(save_dir),env_name))
+    
     '''
     st = time.process_time()
     obs = env.reset()
@@ -197,4 +199,4 @@ if __name__ == '__main__':
     # get execution time
     res = et - st
     print('CPU Execution time:', res, 'seconds')
-    ''' '''
+    ''' 
