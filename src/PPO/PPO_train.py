@@ -1,7 +1,7 @@
 import gym 
 import numpy as np
 
-from stable_baselines3 import PPO, DDPG, TD3, A2C, SAC
+from stable_baselines3 import PPO, DDPG, TD3, A2C, SAC, HerReplayBuffer
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import SubprocVecEnv, VecNormalize, VecTransposeImage, DummyVecEnv
 from stable_baselines3.common.utils import set_random_seed
@@ -92,8 +92,8 @@ save_dir = pathlib.Path('{}/{}'.format(str(base_dir),'/models'))
 env_name = 'forwarder-v0'
 num_cpu = 3  # Number of processes to use
 env_id = "heavy_pb:{}".format(env_name) 
-#env_id = 'CartPole-v1'
-total_timesteps = 200000
+#env_id = "BipedalWalker-v3"
+total_timesteps = 1000000
 eval_freq = 20000
 n_eval_episodes = 2
 gif_rec_freq = 20000
@@ -116,7 +116,7 @@ def make_env(env_id, rank, seed=0):
     :param rank: (int) index of the subprocess
     """
     def _init():
-        env = gym.make(env_id, increment=False, wait=False)
+        env = gym.make(env_id)
         env.seed(seed + rank)
         env = Monitor(env, filename=None)
         return env
@@ -125,15 +125,11 @@ def make_env(env_id, rank, seed=0):
 
 if __name__ == '__main__':
 
-    env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
-    #env = gym.make(env_id)
-    
-    #env = DummyVecEnv([lambda: Monitor(gym.make(env_id, increment=False, wait=False), filename=None)])
+    #env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
+
+    env = DummyVecEnv([lambda: Monitor(gym.make(env_id, wait=True, increment=True), filename=None)])
     #env = VecFrameStack(env, n_stack=4)
 
-    #env = vec_env = make_vec_env(env_id, n_envs=4, seed=0)
-    #env = VecTransposeImage(env)
-    #env = VecNormalize(env, norm_obs=True, norm_reward=True)
     eval_callback = EvalCallback(env ,
                                 best_model_save_path=save_dir,
                                 log_path=log_dir,
@@ -144,8 +140,7 @@ if __name__ == '__main__':
                                 callback_on_new_best=None)
 
     video_folder = "{}/videos/{}/".format(log_dir,env_name) 
-    customCallback = VideoCallback(#env=env,
-                                    video_folder=video_folder, 
+    customCallback = VideoCallback(video_folder=video_folder, 
                                     env_id=env_id, 
                                     gif_name='{}'.format(env_name),
                                     rec_freq=gif_rec_freq
@@ -153,28 +148,45 @@ if __name__ == '__main__':
 
     #custom_actor_critic = CustomActorCriticPolicy(env.observation_space, action_space=env.action_space, lr_schedule=linear_schedule(.8))
     #env.env_method('set_frame_skip', fs) 
-    model = PPO('CnnPolicy' , env, verbose=1, tensorboard_log=log_dir, device=device, use_sde=True, sde_sample_freq=8, policy_kwargs=policy_kwargs) #use_sde - with continious
+    #model = PPO('MlpPolicy' , env, verbose=1, tensorboard_log=log_dir, device=device, use_sde=False, sde_sample_freq=8)#, policy_kwargs=policy_kwargs) #use_sde - with continious
     #model.load('/Users/ilyakurinov/Documents/University/RL/models/expert_[0.6, 4, 0.8, 64]')
     #model = DDPG("CnnPolicy", env, verbose=1)
     #model = TD3("CnnPolicy", env, verbose=1,)
-    #model = SAC('CnnPolicy', env, use_sde=True, sde_sample_freq=8)
+    '''model = SAC('MlpPolicy', 
+                env, 
+                use_sde=True,
+                sde_sample_freq=8,
+                replay_buffer_class=HerReplayBuffer,
+                replay_buffer_kwargs=dict(n_sampled_goal=4,
+                                          goal_selection_strategy="future",
+                                        )
+                )'''
+    
+    model = SAC('CnnPolicy', 
+                env, 
+                use_sde=True, 
+                sde_sample_freq=16, 
+                verbose=1)
+    '''model.load('/Users/ilyakurinov/Documents/University/RL/student.zip')
+
     model.learn(total_timesteps=total_timesteps, 
                 tb_log_name='ppo_{}'.format(env_name),
                 callback=[eval_callback, customCallback]
                 )
     model.save('{}/control_{}_CustomFE'.format(str(save_dir),env_name))
-    
+    '''
     st = time.process_time()
     obs = env.reset()
-
+    print(env.action_space)
     for i in range(2000):
-        action = model.predict(obs)
+        action = model.predict(obs, deterministic=False)
         print(action[0])
         
         obs, rew, done, _ = env.step(action[0])
         #print(obs.shape)
         #env.render_obs(obs)
-        #env.env_method('render_obs', obs[0].transpose())
+        env.env_method('render_obs', obs[0].transpose())
+        #env._env_method('render')
         #env.render()
 
         if(done.all()):

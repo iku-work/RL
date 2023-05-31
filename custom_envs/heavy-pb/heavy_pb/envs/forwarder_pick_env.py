@@ -40,7 +40,7 @@ class ForwarderPick(gym.Env):
         self.action_high_arr = np.full((6,), self.action_max,  dtype = np.float64)  #* self.action_scale
 
         self.update_freq =  160
-        self.frameskip = 240
+        self.frameskip = 40
 
         # Start the simulation
         #self.client = p.connect(p.DIRECT)# p.GUI)# 
@@ -419,6 +419,7 @@ class ForwarderPick(gym.Env):
         end_ef = np.asarray(end_ef[0])
         return np.linalg.norm(end_ef - np.asarray(self.unloading_point,dtype=np.float32))
 
+
 '''
 from time import sleep
 import os
@@ -436,10 +437,21 @@ for i in range(100000):
 
     action = fwd.action_space.sample()
     print(action)
+    action = np.full(fill_value=0.5, shape=fwd.action_space.shape)
     obs, rew, done, _ = fwd.step(action)
 
     #fwd.render()
-    #fwd.render_obs(obs.transpose())
+    seg_mask = fwd.get_segmentation_mask()
+    seg_indx_wood = seg_mask < 2
+    seg_indx_base = np.logical_not(seg_mask == 1)
+
+    new_mask = np.zeros(shape=seg_mask.shape)
+    seg_wood = np.where(seg_indx_wood, new_mask, new_mask+255)
+    seg_base = np.where(seg_indx_base, new_mask, new_mask+255)
+
+    print(seg_mask)
+    seg_mask = np.dstack((seg_mask, seg_mask, seg_mask, seg_mask))
+    fwd.render_obs(seg_wood)
 
     if (i % 200) == 0 or done:
         print("Reset at step: ", i)

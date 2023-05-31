@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
 
-from stable_baselines3 import PPO, A2C, SAC, TD3, DDPG
+from stable_baselines3 import PPO, A2C, SAC, TD3, DDPG, HerReplayBuffer
 from stable_baselines3.common.evaluation import evaluate_policy
 
 import gym
@@ -231,7 +231,7 @@ class ExpertModel:
         if(self.verbose):
             print(f"Test set: Average loss: {test_loss:.4f}")
 
-'''
+'''''' 
 env_name = 'forwarder-v0'
 env_id = "heavy_pb:{}".format(env_name) 
 #env_id = "CartPole-v1"
@@ -248,7 +248,22 @@ video_dir = pathlib.Path('{}/{}'.format(str(base_dir),'/logs/videos'))
 save_dir = pathlib.Path('{}/{}'.format(str(base_dir),'/models'))
 
 
-student = PPO("CnnPolicy", env, verbose=1, device='cpu')
+policy_kwargs = dict(
+    #features_extractor_class=CustomCNN,
+    net_arch=[128,128],
+    #features_extractor_kwargs=dict(features_dim=128),
+)
+
+student = SAC("CnnPolicy", 
+              env, 
+              verbose=1, 
+              device='cpu',
+              policy_kwargs=policy_kwargs
+              #replay_buffer_class=HerReplayBuffer,
+              #replay_buffer_kwargs=dict(n_sampled_goal=4,
+              #                            goal_selection_strategy="future",
+              #                          )
+              )
 #student = DDPG("CnnPolicy", env, verbose=1)
 #num_interactions = len(data)
 
@@ -262,7 +277,7 @@ expert_model = ExpertModel(student=student,
 
 student = expert_model.pretrain_agent()
 
-student.save("a2c_student")
+student.save("student")
 
 callback = VideoCallback(env=env,
                          env_id=env_id, 
@@ -273,4 +288,3 @@ callback = VideoCallback(env=env,
                          )
 
 student.learn(600, callback=callback)
-''' 
