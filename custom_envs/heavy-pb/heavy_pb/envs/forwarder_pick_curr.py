@@ -41,7 +41,7 @@ class ForwarderPickCurr(gym.Env):
         self.action_high_arr = np.full((6,), self.action_max,  dtype = np.float64)  #* self.action_scale
 
         self.update_freq =  160
-        self.frameskip = 20
+        self.frameskip = 40
 
         # Start the simulation
         #self.client = p.connect(p.DIRECT)# p.GUI)# 

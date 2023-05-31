@@ -169,7 +169,7 @@ if __name__ == '__main__':
                 sde_sample_freq=16, 
                 verbose=1)
     #model.load('/Users/ilyakurinov/Documents/University/RL/student.zip')
-
+    
     model.learn(total_timesteps=total_timesteps, 
                 tb_log_name='ppo_{}'.format(env_name),
                 callback=[eval_callback, customCallback]
