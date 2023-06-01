@@ -97,7 +97,7 @@ env_id = "heavy_pb:{}".format(env_name)
 total_timesteps = 1000000
 eval_freq = 20000
 n_eval_episodes = 2
-gif_rec_freq = 20000
+gif_rec_freq = 200
 device = 'cpu'
 
 # Check if cuda available
@@ -126,9 +126,9 @@ def make_env(env_id, rank, seed=0):
 
 if __name__ == '__main__':
 
-    #env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
+    env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
 
-    env = DummyVecEnv([lambda: Monitor(gym.make(env_id, wait=True, increment=True), filename=None)])
+    #env = DummyVecEnv([lambda: Monitor(gym.make(env_id, wait=True, increment=True), filename=None)])
     #env = VecFrameStack(env, n_stack=4)
 
     eval_callback = EvalCallback(env ,
@@ -148,8 +148,7 @@ if __name__ == '__main__':
                                     )
 
     #custom_actor_critic = CustomActorCriticPolicy(env.observation_space, action_space=env.action_space, lr_schedule=linear_schedule(.8))
-    #env.env_method('set_frame_skip', fs) 
-    #model = PPO('MlpPolicy' , env, verbose=1, tensorboard_log=log_dir, device=device, use_sde=False, sde_sample_freq=8)#, policy_kwargs=policy_kwargs) #use_sde - with continious
+    model = PPO('CnnPolicy' , env, verbose=1, tensorboard_log=log_dir, device=device, use_sde=False, sde_sample_freq=8)#, policy_kwargs=policy_kwargs) #use_sde - with continious
     #model.load('/Users/ilyakurinov/Documents/University/RL/models/expert_[0.6, 4, 0.8, 64]')
     #model = DDPG("CnnPolicy", env, verbose=1)
     #model = TD3("CnnPolicy", env, verbose=1,)
@@ -161,14 +160,14 @@ if __name__ == '__main__':
                 replay_buffer_kwargs=dict(n_sampled_goal=4,
                                           goal_selection_strategy="future",
                                         )
-                )'''
+                )
     
     model = SAC('CnnPolicy', 
                 env, 
                 use_sde=True, 
                 sde_sample_freq=16, 
                 verbose=1,
-                buffer_size=100000)
+                buffer_size=100000)'''
     #model.load('/Users/ilyakurinov/Documents/University/RL/student.zip')
     
     model.learn(total_timesteps=total_timesteps, 
