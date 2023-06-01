@@ -92,7 +92,7 @@ class ForwarderPickCurr(gym.Env):
         self.action_space = gym.spaces.Box(
             low=self.action_low_arr,
             high= self.action_high_arr,
-            dtype = np.float64
+            dtype = np.float32
         )
         
         obs_low = np.zeros(shape=(4,128,128))
