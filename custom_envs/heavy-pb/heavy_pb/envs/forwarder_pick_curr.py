@@ -207,7 +207,7 @@ class ForwarderPickCurr(gym.Env):
         #    done = True
 
         self.img = self.forwarder.camera.getCameraImage()
-        self.render()
+        #self.render()
         return self.get_vis_obs(mode='seg'), reward, done, info
 
     def reset(self):
