@@ -97,7 +97,7 @@ env_id = "heavy_pb:{}".format(env_name)
 total_timesteps = 1000000
 eval_freq = 20000
 n_eval_episodes = 2
-gif_rec_freq = 200
+gif_rec_freq = 20000
 device = 'cpu'
 
 # Check if cuda available
