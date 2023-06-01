@@ -34,7 +34,7 @@ class ForwarderPickCurr(gym.Env):
         self.vis_obs_height = 60
         self.vis_obs_shape = (self.vis_obs_width, self.vis_obs_height)
 
-        self.action_scale = np.array([.05, .05, .05, .05, 1, 1])
+        self.action_scale = np.array([.01, .01, .01, .01, .5, .5])
         self.action_low = -1
         self.action_max = 1
         self.action_low_arr = np.full((6,), self.action_low,  dtype = np.float64) #* self.action_scale
@@ -203,7 +203,11 @@ class ForwarderPickCurr(gym.Env):
         if (self.check_collision_results()):
             reward = 0
 
+        #if((not grasp) and np.isclose(mass, 0)):
+        #    done = True
+
         self.img = self.forwarder.camera.getCameraImage()
+        self.render()
         return self.get_vis_obs(mode='seg'), reward, done, info
 
     def reset(self):

@@ -19,7 +19,7 @@
     <material name="silver"/>
     <material/>
   </visual>
-  <collision>
+  <collision concave='no'>
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <geometry>
       <mesh filename="meshes/base_link_collision_vhacd.obj" scale="0.001 0.001 0.001"/>

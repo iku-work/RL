@@ -97,7 +97,7 @@ class Forwarder:
                               flags= p.URDF_USE_INERTIA_FROM_FILE
                                     | p.URDF_USE_SELF_COLLISION 
                                     | p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES
-                                    #| p.URDF_USE_SELF_COLLISION_EXCLUDE_PARENT
+                                    | p.URDF_USE_SELF_COLLISION_EXCLUDE_PARENT
                               )
         
         #print(f_name)

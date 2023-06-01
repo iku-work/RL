@@ -149,7 +149,7 @@ if __name__ == '__main__':
                                     )
 
     #custom_actor_critic = CustomActorCriticPolicy(env.observation_space, action_space=env.action_space, lr_schedule=linear_schedule(.8))
-    #model = PPO('CnnPolicy' , env, verbose=1, tensorboard_log=log_dir, device=device, use_sde=False, sde_sample_freq=8)#, policy_kwargs=policy_kwargs) #use_sde - with continious
+    model = PPO('CnnPolicy' , env, verbose=1, tensorboard_log=log_dir, device=device, use_sde=True, sde_sample_freq=8)#, policy_kwargs=policy_kwargs) #use_sde - with continious
     #model.load('/Users/ilyakurinov/Documents/University/RL/models/expert_[0.6, 4, 0.8, 64]')
     #model = DDPG("CnnPolicy", env, verbose=1)
     #model = TD3("CnnPolicy", env, verbose=1,)
@@ -163,12 +163,12 @@ if __name__ == '__main__':
                                         )
                 )'''
     
-    model = SAC('CnnPolicy', 
+    '''model = SAC('CnnPolicy', 
                 env, 
                 use_sde=True, 
                 sde_sample_freq=16, 
                 verbose=1,
-                buffer_size=100000)
+                buffer_size=100000)'''
     #model.load('/Users/ilyakurinov/Documents/University/RL/student.zip')
     
     model.learn(total_timesteps=total_timesteps, 
