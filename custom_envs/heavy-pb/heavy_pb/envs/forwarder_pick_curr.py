@@ -81,7 +81,7 @@ class ForwarderPickCurr(gym.Env):
         p.enableJointForceTorqueSensor(self.forwarderId, 7)
 
 
-        self.lvl = 3
+        self.lvl = 1
         self.max_lvls = 9
         self.level_progress = 0
         # Level progress value when considered achieved and move to new lvl
