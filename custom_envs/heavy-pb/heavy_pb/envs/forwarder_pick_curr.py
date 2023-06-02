@@ -81,11 +81,11 @@ class ForwarderPickCurr(gym.Env):
         p.enableJointForceTorqueSensor(self.forwarderId, 7)
 
 
-        self.lvl = 2
+        self.lvl = 3
         self.max_lvls = 9
         self.level_progress = 0
         # Level progress value when considered achieved and move to new lvl
-        self.learned = 20
+        self.learned = 50
         self.log_lost_t = 0
 
         self.state_filename = self.get_random_state_filename()
@@ -177,7 +177,7 @@ class ForwarderPickCurr(gym.Env):
 
         mass = self.massSensor.getMass()
         if(np.greater(mass, 0)):
-            reward += mass
+            reward += self.lvl
             self.level_progress += 1
             done = True
 
@@ -216,7 +216,7 @@ class ForwarderPickCurr(gym.Env):
         #print('Reward: {}'.format(reward))
         #self.render()
         obs = self.get_vis_obs(mode='seg')
-        #self.render_obs(obs.transpose())
+        self.render_obs(obs.transpose())
         return obs, reward, done, info
 
     def reset(self):
