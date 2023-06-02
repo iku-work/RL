@@ -31,10 +31,11 @@ def make_env(env_id, rank, seed=0):
     set_random_seed(seed)
     return _init
 
-env_name = 'forwarder-v0'
+#env_name = 'forwarder-v0'
+env_name = 'forwarder-curriculum-v0'
 env_id = "heavy_pb:{}".format(env_name) 
-num_cpu = 256  # Number of processes to use
-total_timesteps = 5000
+num_cpu = 3  # Number of processes to use
+total_timesteps = 20000
 eval_freq = 12_000
 n_eval_episodes = 10
 gif_rec_freq = 10000
@@ -75,7 +76,9 @@ def objective(trial):
                 learning_rate=learning_rate, 
                 ent_coef=ent_coef, 
                 verbose=0, 
-                tensorboard_log=log_dir
+                tensorboard_log=log_dir,
+                use_sde=True,
+                sde_sample_freq=8
                 )
     
     video_folder = "logs/videos/{}_{}_{}_{}_{}/".format(env_name, n_steps, n_epochs, learning_rate, ent_coef) 
@@ -84,7 +87,7 @@ def objective(trial):
                                     gif_name='{}'.format(env_name),
                                     rec_freq=gif_rec_freq
                                     )
-    model.learn(total_timesteps=total_timesteps, callback=customCallback, progress_bar=True)
+    model.learn(total_timesteps=total_timesteps, callback=customCallback, progress_bar=False)
     mean_reward, _ = evaluate_policy(model, 
                                      env, 
                                      n_eval_episodes, 
@@ -101,8 +104,8 @@ def objective(trial):
 if __name__ == '__main__':
 
     env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
-    env = VecNormalize(env, norm_obs=False, norm_reward=True)
-    env = VecTransposeImage(env)
+    #env = VecNormalize(env, norm_obs=False, norm_reward=True)
+    #env = VecTransposeImage(env)
 
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=20)

@@ -34,7 +34,7 @@ class ForwarderPickCurr(gym.Env):
         self.vis_obs_height = 60
         self.vis_obs_shape = (self.vis_obs_width, self.vis_obs_height)
 
-        self.action_scale = np.array([.01, .01, .01, .01, .5, .5])
+        self.action_scale = np.array([.02, .01, .01, .01, .15, .5])
         self.action_low = -1
         self.action_max = 1
         self.action_low_arr = np.full((6,), self.action_low,  dtype = np.float64) #* self.action_scale
@@ -85,7 +85,9 @@ class ForwarderPickCurr(gym.Env):
         self.max_lvls = 9
         self.level_progress = 0
         # Level progress value when considered achieved and move to new lvl
-        self.learned = 10
+        self.learned = 20
+        self.log_lost_t = 0
+
         self.state_filename = self.get_random_state_filename()
         self.load_state(self.state_filename)
 
@@ -190,25 +192,32 @@ class ForwarderPickCurr(gym.Env):
         self.dist_now = self.get_dist_to_pile(self.wood_pos)
 
         if(grasp):
-            reward += ((15 - self.get_dist_to_unload()) /15) * 0.01
+            self.log_lost_t = 0
+            #reward += ((15 - self.get_dist_to_unload()) /15)/2
         else:
             if(not np.allclose(self.wood_pos, wood_pos, atol=.1)):
                 self.wood_pos = wood_pos
                 self.last_smallest_dist = 50
             else:
                 if( self.dist_now < self.last_smallest_dist):
-                    reward +=  ((15 - self.dist_now)/15) * 0.001 #self.last_smallest_dist  #.001
+                    #reward +=  ((15 - self.dist_now)/15) #self.last_smallest_dist  #.001
                     self.last_smallest_dist = self.dist_now
 
         if (self.check_collision_results()):
             reward = 0
 
-        #if((not grasp) and np.isclose(mass, 0)):
-        #    done = True
+        if((not grasp) and np.isclose(mass, 0)):
+            print("Log lost at: ",self.log_lost_t, ' Lvl: ', self.lvl, 'Lvl progress: ', self.level_progress)
+            self.log_lost_t += 1
+            if(self.log_lost_t > 5):
+                done = True
 
         self.img = self.forwarder.camera.getCameraImage()
+        #print('Reward: {}'.format(reward))
         #self.render()
-        return self.get_vis_obs(mode='seg'), reward, done, info
+        obs = self.get_vis_obs(mode='seg')
+        #self.render_obs(obs.transpose())
+        return obs, reward, done, info
 
     def reset(self):
         
@@ -222,6 +231,9 @@ class ForwarderPickCurr(gym.Env):
 
         self.dist_now = 50
         self.last_smallest_dist = 50
+
+        self.log_lost_t = 0
+        
         self.img = self.forwarder.camera.getCameraImage()
         return self.get_vis_obs('seg')
     
@@ -270,16 +282,16 @@ class ForwarderPickCurr(gym.Env):
 
             new_mask = np.zeros(shape=seg_mask.shape)
             seg_wood = np.where(seg_indx_wood, new_mask, new_mask+255)
-            #seg_base = np.where(seg_indx_base, new_mask, new_mask+255)
+            seg_base = np.where(seg_indx_base, new_mask, new_mask+255)
 
             #rgb =  cv2.resize(self.img[2], (self.vis_obs_width, self.vis_obs_height), interpolation= cv2.INTER_LINEAR)
 
             zero_mask = np.zeros(shape=seg_mask.shape)
-            #seg_mask = np.dstack((zero_mask, seg_wood, seg_base, seg_mask))
-            seg_mask = np.dstack((zero_mask, seg_wood, seg_wood, seg_wood))
+            seg_mask = np.dstack((seg_base, seg_wood, zero_mask,seg_mask))
+            #seg_mask = np.dstack((zero_mask, seg_wood, seg_wood, seg_wood))
             seg_mask = np.asarray(seg_mask, dtype=np.uint8)
             rgb = np.asarray(rgb, dtype=np.uint8)
-            return cv2.addWeighted(rgb, 0.6, seg_mask, 0.5,0).transpose()
+            return cv2.addWeighted(rgb, 0.9, seg_mask, 0.9,0).transpose()
         
 
         #return self.img[2]
