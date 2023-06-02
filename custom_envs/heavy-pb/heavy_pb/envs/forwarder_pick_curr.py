@@ -216,7 +216,7 @@ class ForwarderPickCurr(gym.Env):
         #print('Reward: {}'.format(reward))
         #self.render()
         obs = self.get_vis_obs(mode='seg')
-        self.render_obs(obs.transpose())
+        #self.render_obs(obs.transpose())
         return obs, reward, done, info
 
     def reset(self):
