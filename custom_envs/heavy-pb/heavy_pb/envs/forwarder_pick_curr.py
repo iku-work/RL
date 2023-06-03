@@ -250,7 +250,7 @@ class ForwarderPickCurr(gym.Env):
 
         self.img = self.forwarder.camera.getCameraImage()
         #print('Reward: {}'.format(reward))
-        self.render()
+        #self.render()
         obs = self.get_observation()
         #self.render_obs(obs.transpose())
         return obs, reward, done, False, {}
