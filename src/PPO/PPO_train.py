@@ -1,4 +1,4 @@
-import gym 
+import gymnasium as gym
 import numpy as np
 
 from stable_baselines3 import PPO, DDPG, TD3, A2C, SAC, HerReplayBuffer
@@ -118,7 +118,7 @@ def make_env(env_id, rank, seed=0):
     """
     def _init():
         env = gym.make(env_id)
-        env.seed(seed + rank)
+        #env.seed(seed + rank)
         env = Monitor(env, filename=None)
         return env
     set_random_seed(seed)
@@ -126,9 +126,10 @@ def make_env(env_id, rank, seed=0):
 
 if __name__ == '__main__':
 
-    #env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
-
-    env = DummyVecEnv([lambda: Monitor(gym.make(env_id), filename=None)])
+    env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
+    #gym.register(env_name, 'custom_envs/heavy_pb/envs')
+    #env = DummyVecEnv([lambda: Monitor(gym.make(env_id), filename=None)])
+    #env = gym.make(env_id, increment=False)
     #env = VecFrameStack(env, n_stack=4)
 
     eval_callback = EvalCallback(env ,
@@ -149,7 +150,7 @@ if __name__ == '__main__':
                                     )
 
     #custom_actor_critic = CustomActorCriticPolicy(env.observation_space, action_space=env.action_space, lr_schedule=linear_schedule(.8))
-    model = PPO('CnnPolicy' , 
+    '''model = PPO('CnnPolicy' , 
                 env, 
                 verbose=1, 
                 tensorboard_log=log_dir, 
@@ -159,7 +160,7 @@ if __name__ == '__main__':
                 learning_rate=.0043,
                 ent_coef=0.006,
                 n_epochs=1
-                )#, policy_kwargs=policy_kwargs) #use_sde - with continious
+                )#, policy_kwargs=policy_kwargs) #use_sde - with continious'''
     #model.load('/Users/ilyakurinov/Documents/University/RL/models/expert_[0.6, 4, 0.8, 64]')
     #model = DDPG("CnnPolicy", env, verbose=1)
     #model = TD3("CnnPolicy", env, verbose=1,)
@@ -173,12 +174,13 @@ if __name__ == '__main__':
                                         )
                 )'''
     
-    '''model = SAC('CnnPolicy', 
+    model = PPO('MlpPolicy', 
                 env, 
                 use_sde=True, 
                 sde_sample_freq=16, 
                 verbose=1,
-                buffer_size=100000)'''
+                #buffer_size=200000
+                )
     #model.load('/Users/ilyakurinov/Documents/University/RL/student.zip')
     
     model.learn(total_timesteps=total_timesteps, 

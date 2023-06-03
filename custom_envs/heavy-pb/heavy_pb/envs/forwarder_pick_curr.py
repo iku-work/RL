@@ -1,4 +1,4 @@
-import gym
+import gymnasium as gym
 from heavy_pb.resources.forwarder.forwarder import Forwarder, WoodPile,WoodPile2, MassSensor
 import pybullet as p
 import numpy as np
@@ -34,14 +34,16 @@ class ForwarderPickCurr(gym.Env):
         self.vis_obs_height = 60
         self.vis_obs_shape = (self.vis_obs_width, self.vis_obs_height)
 
-        self.action_scale = np.array([.02, .01, .01, .01, .15, .5])
+        self.action_scale = np.array([1, 1, 1, 1, .15, .5])
         self.action_low = -1
         self.action_max = 1
         self.action_low_arr = np.full((6,), self.action_low,  dtype = np.float64) #* self.action_scale
         self.action_high_arr = np.full((6,), self.action_max,  dtype = np.float64)  #* self.action_scale
 
         self.update_freq =  160
-        self.frameskip = 40
+        self.frameskip = 80
+
+        self.render_mode = 'human'
 
         # Start the simulation
         #self.client = p.connect(p.DIRECT)# p.GUI)# 
@@ -57,7 +59,8 @@ class ForwarderPickCurr(gym.Env):
         self.layer_dim = 1
         self.n_layers = 1
         self.wood_offset = 2
-
+        self.grasp = False
+        self.mass = 0
 
         self.rendered_img = None
         self.img = None
@@ -81,7 +84,7 @@ class ForwarderPickCurr(gym.Env):
         p.enableJointForceTorqueSensor(self.forwarderId, 7)
 
 
-        self.lvl = 1
+        self.lvl = 3
         self.max_lvls = 9
         self.level_progress = 0
         # Level progress value when considered achieved and move to new lvl
@@ -90,17 +93,20 @@ class ForwarderPickCurr(gym.Env):
 
         self.state_filename = self.get_random_state_filename()
         self.load_state(self.state_filename)
-
+        self.forwarder.camera.img_width = self.vis_obs_width
+        self.forwarder.camera.img_height = self.vis_obs_height
         self.action_space = gym.spaces.Box(
             low=self.action_low_arr,
             high= self.action_high_arr,
-            dtype = np.float32
+            dtype=np.float32
         )
         
-        obs_low = np.zeros(shape=(4,128,128))
-        obs_high = np.zeros(shape=(4,128,128))
-        obs_high.fill(255)
-        self.dummy_obs = self.reset()
+        #obs_low = np.zeros(shape=(4,self.vis_obs_width,self.vis_obs_height))
+        #obs_high = np.zeros(shape=(4,self.vis_obs_width,self.vis_obs_height))
+        #obs_high.fill(255)
+        self.dummy_obs = self.reset()[0]
+        obs_low = np.full(fill_value=-np.inf, shape=self.dummy_obs.shape)
+        obs_high = np.full(fill_value=np.inf, shape=self.dummy_obs.shape)
         self.observation_space = gym.spaces.Box(
             low=obs_low,
             high=obs_high,
@@ -109,6 +115,36 @@ class ForwarderPickCurr(gym.Env):
             #low=np.full((117,), -np.inf, dtype = np.float32),
             #high=np.full((117,), np.inf, dtype = np.float32),
         )
+    
+    def get_observation(self):
+
+        observation = np.array([])
+
+        # Get position, orientation in Euler angles, worldLinearVelocity and worldAngularVelocity 
+        for link in range(p.getNumJoints(self.forwarderId)):
+            link_pos, link_rot,_,_,worldLinVel,worldRotVel= p.getLinkState(self.forwarderId, link)
+            link_rot = p.getEulerFromQuaternion(link_rot)
+            link_obs = (link_pos + link_rot + worldLinVel + worldRotVel)
+            observation = np.concatenate((observation, np.array(link_obs)))
+
+        obs_lis = np.array([self.dist_now, self.lvl, self.learned, self.level_progress, self.mass,self.grasp])
+        observation = np.concatenate((observation, self.wood_pos,self.unloading_point, obs_lis ))
+        # Concatenate the segmentation mask from camera here
+        # Get camera image, camera is attached to Extension and looks at grapple hook
+        # Z-axis offset is 1 meter
+        #img = self.camera.getCameraImage()
+        
+        # Get segmentation mask  
+        #img_flat = img[4].flatten()
+
+        #print(img_flat)
+
+        # Add flattened image to observation
+
+        # Calculate positions of wood bodies, and check if they are within unloading zone
+        # This may be done inside of the gym environment and added there
+
+        return observation
 
     def get_random_state_filename(self):
         
@@ -175,38 +211,38 @@ class ForwarderPickCurr(gym.Env):
             self.forwarder.apply_action(action)
             p.stepSimulation()
 
-        mass = self.massSensor.getMass()
-        if(np.greater(mass, 0)):
+        self.mass = self.massSensor.getMass()
+        if(np.greater(self.mass, 0)):
             reward += self.lvl
             self.level_progress += 1
             done = True
 
-        grasp = self.check_grasp()
+        self.grasp = self.check_grasp()
 
         wood_pos = p.getBasePositionAndOrientation(self.woodPile.wood_list[0])
-        wood_pos = np.asarray(wood_pos[0])
+        self.wood_pos = np.asarray(wood_pos[0])
 
-        if(not np.allclose(self.wood_pos, wood_pos, atol=.1)):
+        if(not np.allclose(self.wood_pos, wood_pos[0], atol=.1)):
             self.wood_pos = wood_pos
 
         self.dist_now = self.get_dist_to_pile(self.wood_pos)
 
-        if(grasp):
+        if(self.grasp):
             self.log_lost_t = 0
-            #reward += ((15 - self.get_dist_to_unload()) /15)/2
+            reward += ((15 - self.get_dist_to_unload()) /15)/2
         else:
-            if(not np.allclose(self.wood_pos, wood_pos, atol=.1)):
+            if(not np.allclose(self.wood_pos, wood_pos[0], atol=.1)):
                 self.wood_pos = wood_pos
                 self.last_smallest_dist = 50
             else:
                 if( self.dist_now < self.last_smallest_dist):
-                    #reward +=  ((15 - self.dist_now)/15) #self.last_smallest_dist  #.001
+                    reward +=  ((15 - self.dist_now)/15) #self.last_smallest_dist  #.001
                     self.last_smallest_dist = self.dist_now
 
         if (self.check_collision_results()):
             reward = 0
 
-        if((not grasp) and np.isclose(mass, 0)):
+        if((not self.grasp) and np.isclose(self.mass, 0)):
             print("Log lost at: ",self.log_lost_t, ' Lvl: ', self.lvl, 'Lvl progress: ', self.level_progress)
             self.log_lost_t += 1
             if(self.log_lost_t > 5):
@@ -214,12 +250,12 @@ class ForwarderPickCurr(gym.Env):
 
         self.img = self.forwarder.camera.getCameraImage()
         #print('Reward: {}'.format(reward))
-        #self.render()
-        obs = self.get_vis_obs(mode='seg')
+        self.render()
+        obs = self.get_observation()
         #self.render_obs(obs.transpose())
-        return obs, reward, done, info
+        return obs, reward, done, False, {}
 
-    def reset(self):
+    def reset(self, seed=None, options=None):
         
         # Start a new level
         if(self.level_progress > self.learned and self.lvl < self.max_lvls):
@@ -235,7 +271,7 @@ class ForwarderPickCurr(gym.Env):
         self.log_lost_t = 0
         
         self.img = self.forwarder.camera.getCameraImage()
-        return self.get_vis_obs('seg')
+        return self.get_observation(), {}
     
     def close(self):
 
