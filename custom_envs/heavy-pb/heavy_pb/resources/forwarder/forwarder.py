@@ -210,33 +210,7 @@ class Forwarder:
                                         maxVelocity = self.max_velocity[ind]
                                         )
         
-    def get_observation(self):
-
-        observation = np.array([])
-
-        # Get position, orientation in Euler angles, worldLinearVelocity and worldAngularVelocity 
-        for link in range(p.getNumJoints(self.forwarder)):
-            link_pos, link_rot,_,_,worldLinVel,worldRotVel= p.getLinkState(self.forwarder, link)
-            link_rot = p.getEulerFromQuaternion(link_rot)
-            link_obs = (link_pos + link_rot + worldLinVel + worldRotVel)
-            observation = np.concatenate((observation, np.array(link_obs)))
-
-        # Concatenate the segmentation mask from camera here
-        # Get camera image, camera is attached to Extension and looks at grapple hook
-        # Z-axis offset is 1 meter
-        #img = self.camera.getCameraImage()
-        
-        # Get segmentation mask  
-        #img_flat = img[4].flatten()
-
-        #print(img_flat)
-
-        # Add flattened image to observation
-
-        # Calculate positions of wood bodies, and check if they are within unloading zone
-        # This may be done inside of the gym environment and added there
-
-        return observation
+   
 
 class TriggerVolume():
 
